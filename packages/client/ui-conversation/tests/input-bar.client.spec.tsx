@@ -332,6 +332,35 @@ describe('image draft rail', () => {
     await vi.waitFor(() => { expect(shell.snapshot.draft).toBe('同时粘贴的文字') })
   })
 
+  it('collects a macOS Electron screenshot exposed only through clipboard files', () => {
+    const addFiles = vi.fn(() => null)
+    const { textarea } = bench({ addFiles })
+    const screenshot = new File([Uint8Array.of(1, 2, 3)], 'Screenshot.png', { type: 'image/png' })
+    fireEvent.paste(textarea, {
+      clipboardData: {
+        items: [],
+        files: [screenshot],
+        getData: () => '',
+      },
+    })
+    expect(addFiles).toHaveBeenCalledWith([screenshot])
+  })
+
+  it('de-duplicates one macOS screenshot represented by both clipboard collections', () => {
+    const addFiles = vi.fn(() => null)
+    const { textarea } = bench({ addFiles })
+    const itemImage = new File([Uint8Array.of(1, 2, 3)], 'image.png', { type: 'image/png', lastModified: 1 })
+    const fileImage = new File([Uint8Array.of(1, 2, 3)], 'image.png', { type: 'image/png', lastModified: 2 })
+    fireEvent.paste(textarea, {
+      clipboardData: {
+        items: [{ kind: 'file', type: 'image/png', getAsFile: () => itemImage }],
+        files: [fileImage],
+        getData: () => '',
+      },
+    })
+    expect(addFiles).toHaveBeenCalledWith([itemImage])
+  })
+
   it('pre-checks projected limits at intake: whole-batch refusal with product copy, none added', () => {
     const limits = {
       maxImageBytes: 1024 * 1024,

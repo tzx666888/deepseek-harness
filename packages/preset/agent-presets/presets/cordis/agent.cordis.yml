@@ -34,6 +34,20 @@
   config:
     maxBytes: 65536
 
+# The personalized macOS desktop sets this path only when its signed local
+# automation bridge is installed. Its tools remain scoped to this full-power
+# preset and use the same per-call timeout policy as other external MCP tools.
+- id: desktop-control
+  name: '@deepseek-ai/dsh-mcp-client'
+  disabled: !!js process.platform !== 'darwin' || !process.env.DSH_CONTROL_COMMAND
+  config:
+    serverName: desktop
+    transport: stdio
+    command: !!js process.env.DSH_CONTROL_COMMAND
+    args: ['mcp', 'serve']
+    toolCallTimeoutMs: 60000
+    failOnStartupError: false
+
 # ── shell ───────────────────────────────────────────────────────────────────
 
 # `shell-env` stays in the HOST composition: `apps/cli/src/web.ts` injects it to
@@ -51,6 +65,37 @@
   name: '@deepseek-ai/dsh-tool-pwsh'
   disabled: !!js process.platform !== 'win32'
 
+# Interactive programs need state across calls. The terminal registry belongs
+# to one agent, while its backend still consumes the host sandbox and process
+# services, so the complete stack shares one isolated realm here.
+- id: persistent-terminal
+  name: cordis:group
+  group: true
+  isolate:
+    terminals: true
+  config:
+    - id: terminal
+      name: '@deepseek-ai/dsh-terminal'
+
+    - id: terminal-bash
+      name: '@deepseek-ai/dsh-terminal-bash'
+      disabled: !!js process.platform === 'win32'
+      config:
+        timeoutMs: 300000
+
+    - id: terminal-pwsh
+      name: '@deepseek-ai/dsh-terminal-bash'
+      disabled: !!js process.platform !== 'win32'
+      config:
+        shellDialect: pwsh
+        timeoutMs: 300000
+
+    - id: tool-terminal
+      name: '@deepseek-ai/dsh-tool-terminal'
+      config:
+        enableRunInBackground: true
+        maxResultBytes: 262144
+
 # ── filesystem ──────────────────────────────────────────────────────────────
 
 # Both register into the host `tools` registry and provide nothing, so
@@ -62,6 +107,9 @@
   name: '@deepseek-ai/dsh-tool-fs-search'
   config:
     sampleOverCapGlobResults: false
+
+- id: tool-str-replace-editor
+  name: '@deepseek-ai/dsh-tool-str-replace-editor'
 
 # ── background jobs ────────────────────────────────────────────────────────
 
@@ -191,7 +239,7 @@
     # alone grants no tool.
     - id: tool-subagent-codex
       name: '@deepseek-ai/dsh-tool-subagent'
-      disabled: true
+      disabled: !!js process.env.DSH_ENABLE_CODEX_SUBAGENT !== '1'
       config:
         provider: codex
         toolName: subagent_codex

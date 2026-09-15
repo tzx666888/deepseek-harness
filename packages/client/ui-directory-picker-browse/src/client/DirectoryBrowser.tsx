@@ -217,8 +217,37 @@ function visibleEntries(
   })
 }
 
+/**
+ * Friendly labels for macOS/Unix well-known folders. The Host still returns
+ * and receives their real paths (for example `~/Documents`); only the
+ * home-level row shown to the operator is localized.
+ */
+const HOME_DIRECTORY_LABEL_KEYS: Readonly<Record<string, string>> = {
+  Applications: 'browser.directory.applications',
+  Desktop: 'browser.directory.desktop',
+  Documents: 'browser.directory.documents',
+  Downloads: 'browser.directory.downloads',
+  Library: 'browser.directory.library',
+  Movies: 'browser.directory.movies',
+  Music: 'browser.directory.music',
+  Pictures: 'browser.directory.pictures',
+  Public: 'browser.directory.public',
+  Sites: 'browser.directory.sites',
+}
+
+/** Localize a well-known direct child of the Host home without changing its path. */
+function directoryEntryLabel(entry: DirectoryEntry, listing: DirectoryListing, t: Translate): string {
+  if (listing.path !== listing.home) return entry.name
+  const key = HOME_DIRECTORY_LABEL_KEYS[entry.name]
+  if (key === undefined) return entry.name
+  const translated = t(key)
+  // Test/custom translators may deliberately echo unknown keys. Keep the
+  // actual directory name instead of surfacing an internal locale key.
+  return translated === key ? entry.name : translated
+}
+
 /** One column of folder rows (the Miller view renders one or two of these). */
-function LevelColumn({ entries, selectedPath, busy, onPick, showHidden, filterPrefix, pathEditing }: {
+function LevelColumn({ entries, selectedPath, busy, onPick, showHidden, filterPrefix, pathEditing, entryLabel }: {
   entries: readonly DirectoryEntry[]
   selectedPath: string | null
   busy: boolean
@@ -226,6 +255,7 @@ function LevelColumn({ entries, selectedPath, busy, onPick, showHidden, filterPr
   showHidden: boolean
   filterPrefix: string | null
   pathEditing: boolean
+  entryLabel: (entry: DirectoryEntry) => string
 }) {
   const visible = visibleEntries(entries, selectedPath, showHidden, filterPrefix)
   return (
@@ -255,7 +285,7 @@ function LevelColumn({ entries, selectedPath, busy, onPick, showHidden, filterPr
               {selected
                 ? <IconFolderOpen16 size={16} className={css.rowIconSelected} />
                 : <IconFolderClose16 size={16} className={css.rowIcon} />}
-              <span className={css.rowName}>{entry.name}</span>
+              <span className={css.rowName}>{entryLabel(entry)}</span>
               <IconChevronRightOutline14 size={12} className={css.rowChevron} />
             </button>
           </span>
@@ -934,6 +964,7 @@ export function DirectoryBrowser({ open, listDirectory, createDirectory, onOpen,
                 showHidden={showHidden}
                 filterPrefix={child === null ? typedPrefix : null}
                 pathEditing={draftPending}
+                entryLabel={entry => directoryEntryLabel(entry, parent, t)}
               />
             )}
             {twoPane && <span className={css.divider} />}
@@ -946,6 +977,7 @@ export function DirectoryBrowser({ open, listDirectory, createDirectory, onOpen,
                 showHidden={showHidden}
                 filterPrefix={typedPrefix}
                 pathEditing={draftPending}
+                entryLabel={entry => directoryEntryLabel(entry, child, t)}
               />
             )}
           </div>

@@ -1,6 +1,7 @@
 /** Electron shell: desktop project ownership, custom protocol, windows, and lifecycle. */
 
 import { readFile, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { extname, join, normalize, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -24,6 +25,8 @@ import { desktopErrorState } from './startup-error.ts'
 import { startupFailureDocument } from './startup-document.ts'
 
 const SCHEME = 'dsh-app'
+const DESKTOP_ICON = fileURLToPath(new URL('../assets/xinge-app-icon.png', import.meta.url))
+const DARWIN_DESKTOP_CONTROL_COMMANDS = ['/opt/homebrew/bin/peekaboo', '/usr/local/bin/peekaboo'] as const
 let focusPrimaryWindow = (): void => {}
 type RecoveryAction = 'restart' | 'plugins' | 'reset'
 let profileRecoveryAvailable = (): boolean => false
@@ -87,12 +90,20 @@ function developmentHostInspectPort(enabled: boolean): number | undefined {
   return port
 }
 
+function desktopHostEnvironment(): NodeJS.ProcessEnv {
+  const environment = { ...process.env, DSH_ENABLE_CODEX_SUBAGENT: '1' }
+  if (process.platform !== 'darwin' || process.env.DSH_CONTROL_COMMAND) return environment
+  const command = DARWIN_DESKTOP_CONTROL_COMMANDS.find(existsSync)
+  return command === undefined ? environment : { ...environment, DSH_CONTROL_COMMAND: command }
+}
+
 function createWindow(preload: string, show = false): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
     height: 840,
     minWidth: 880,
     minHeight: 600,
+    icon: DESKTOP_ICON,
     show,
     webPreferences: {
       preload,
@@ -148,6 +159,7 @@ async function serveShellAsset(request: Request): Promise<Response> {
 }
 
 async function main(): Promise<void> {
+  if (process.platform === 'darwin' && app.dock !== undefined) app.dock.setIcon(DESKTOP_ICON)
   const resources = runtimeResources()
   const paths = resolveDesktopPaths()
   const development = app.isPackaged ? undefined : join(app.getAppPath(), '.desktop-build', 'development', 'project')
@@ -204,7 +216,7 @@ async function main(): Promise<void> {
     if (development === undefined) manager.assertProfileRuntime(activeProject)
     const hostInspectPort = developmentHostInspectPort(development !== undefined)
     const host = new DesktopHostProcess(resources.node, development ?? resources.dsh, activeProject,
-      hostInspectPort, process.env, onFailure)
+      hostInspectPort, desktopHostEnvironment(), onFailure)
     return {
       start: () => host.start(),
       stop: () => host.stop(),
@@ -447,6 +459,10 @@ async function main(): Promise<void> {
       { type: 'separator' },
       { role: 'quit' },
     ],
+  }, {
+    // macOS routes the standard Command shortcuts through the application
+    // menu. Keep the native edit roles even though the renderer owns its UI.
+    role: 'editMenu',
   }]))
 
   const createMainWindow = (): BrowserWindow => {

@@ -1,5 +1,6 @@
 // Trusted non-loopback Web access cannot call the loopback-only settings API;
 // the notice therefore advances for this browser process and returns on reload.
+import { lookup } from 'node:dns/promises'
 import type { Browser, Page } from 'playwright'
 import { chromium } from 'playwright'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -11,8 +12,13 @@ import {
 import { ZH_BROWSER_LOCALE } from './support.ts'
 
 const MODE = webSnapshotMode()
+const REMOTE_AUTHORITY = 'remote.localhost'
+const remoteAuthorityAvailable = await lookup(REMOTE_AUTHORITY).then(
+  () => true,
+  () => false,
+)
 
-describe.skipIf(MODE === 'record')('web e2e: remote welcome notice', () => {
+describe.skipIf(MODE === 'record' || !remoteAuthorityAvailable)('web e2e: remote welcome notice', () => {
   let scaffold: WebScaffold
   let browser: Browser
   let page: Page
@@ -20,7 +26,7 @@ describe.skipIf(MODE === 'record')('web e2e: remote welcome notice', () => {
 
   beforeAll(async () => {
     scaffold = await launchWebScaffold({
-      remoteAuthority: 'remote.localhost',
+      remoteAuthority: REMOTE_AUTHORITY,
       welcomeNoticePending: true,
     })
     browser = await chromium.launch()

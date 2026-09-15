@@ -18,9 +18,9 @@
     - img
     - text: 关闭
   - heading "Agent 预设" [level=2]
-  - paragraph: 预设即一个会话的 Agent 所运行的插件组装 —— 它的工具、提示词与能力。复制一份既有预设改成自己的，或用「创造模式」让 Agent 帮你创建。
+  - paragraph: 预设即一个会话的 Agent 所运行的插件组装 —— 它的工具、提示词与能力。复制一份既有预设改成自己的，或用「鑫哥全能模式」让 Agent 帮你创建。
   - text: 允许切换agent模式 beta
-  - paragraph: 开启后，新任务可选择标准、PTC、创造、极简及自定义模式；关闭后统一使用默认模式（默认为标准模式，可自定义）。仅影响新任务。
+  - paragraph: 开启后，新任务可选择标准、PTC、鑫哥全能、极简及自定义模式；关闭后统一使用已配置的默认模式。仅影响新任务。
   - switch "允许切换agent模式" [checked]
   - heading "内置" [level=3]
   - list:
@@ -55,16 +55,16 @@
         - img
         - text: 复制
     - listitem:
-      - 'button "设为默认: 创造模式"':
-        - text: 创造模式 内置 用于创建自定义 Agent preset：具备标准模式的全部能力，并提供运行时检查、插件实验和 preset 创作指导。
+      - 'button "设为默认: 鑫哥全能模式"':
+        - text: 鑫哥全能模式 内置 默认开启文件、联网、持久终端、Skills、计划、工作流、子任务与运行时扩展能力。
         - code: cordis
-      - 'button "查看: 创造模式"':
+      - 'button "查看: 鑫哥全能模式"':
         - img
         - text: 查看
-      - 'button "复制: 创造模式"':
+      - 'button "复制: 鑫哥全能模式"':
         - img
         - text: 复制
   - heading "自定义" [level=3]
-  - button "用「创造模式」创作自定义预设":
+  - button "用「鑫哥全能模式」创作自定义预设":
     - img
-    - text: 用「创造模式」创作自定义预设
+    - text: 用「鑫哥全能模式」创作自定义预设

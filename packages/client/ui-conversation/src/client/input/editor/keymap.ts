@@ -148,10 +148,21 @@ export function registerComposerKeymap(editor: LexicalEditor, handlers: Composer
       // deliver clipboardData on plain events.
       const clipboardData = (event as ClipboardEvent).clipboardData ?? null
       if (clipboardData === null) return false
-      const files = Array.from(clipboardData.items)
+      const itemFiles = Array.from(clipboardData.items ?? [])
         .filter(item => item.kind === 'file')
         .map(item => item.getAsFile())
         .filter((file): file is File => file !== null)
+      // Chromium normally exposes pasted images through `items`, but macOS
+      // Electron can put a screenshot only in `files`. Read both surfaces and
+      // de-duplicate the ordinary case where they contain the same File.
+      const files = [...itemFiles]
+      for (const file of Array.from(clipboardData.files ?? [])) {
+        if (!itemFiles.some(existing => existing === file || (
+          existing.name === file.name
+          && existing.size === file.size
+          && existing.type === file.type
+        ))) files.push(file)
+      }
       if (files.length > 0) handlers.intakeFiles(files)
       const text = clipboardData.getData('text/plain')
       if (text === '') {

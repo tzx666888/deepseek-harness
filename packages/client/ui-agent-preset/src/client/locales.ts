@@ -29,7 +29,7 @@ export const en: Record<AgentPresetSettingsKey, string> = {
   nav: 'Agent presets',
   sectionIntro:
     'A preset is the plugin composition one session\'s agent runs — its tools, prompt, and capabilities. '
-    + 'Duplicate an existing one and make it yours, or let the agent draft one for you in Creator mode.',
+    + 'Duplicate an existing one and make it yours, or let Xinge Full Power draft one for you.',
   builtIn: 'Built-in',
   setDefault: 'Set as default',
   view: 'View',
@@ -42,9 +42,9 @@ export const en: Record<AgentPresetSettingsKey, string> = {
   presetMinimalName: 'Minimal mode',
   presetMinimalDescription:
     'Single-tool coding agent with a persistent shell.',
-  presetCordisName: 'Creator mode',
+  presetCordisName: 'Xinge Full Power',
   presetCordisDescription:
-    'Built for creating custom agent presets, with all Standard mode capabilities plus runtime inspection, plugin experiments, and preset-authoring guidance.',
+    'The default full-capability agent with files, web, persistent terminals, Skills, planning, workflows, subagents, and runtime extensions.',
   duplicate: 'Duplicate',
   duplicateUnavailable: 'This deployment has no writable preset directory',
   delete: 'Delete',
@@ -71,7 +71,7 @@ export const en: Record<AgentPresetSettingsKey, string> = {
     + 'be changed later; everything else is edited in the preset\'s own files.',
   create: 'Create',
   creating: 'Creating…',
-  creatorDraft: 'Draft a custom preset with Creator mode',
+  creatorDraft: 'Draft a custom preset with Xinge Full Power',
   openLocation: 'Open folder',
   showLocation: 'Show location',
   revealedPathLabel: 'Preset files:',
@@ -86,9 +86,9 @@ export const en: Record<AgentPresetSettingsKey, string> = {
   showPicker: 'Allow switching Agent modes',
   showPickerBeta: 'Beta',
   showPickerDescription:
-    'When enabled, new tasks can choose Standard, PTC, Creator, Minimal, and custom modes. When disabled, all new tasks use the default mode (Standard by default; configurable). Only affects new tasks.',
+    'When enabled, new tasks can choose Standard, PTC, Xinge Full Power, Minimal, and custom modes. When disabled, all new tasks use the configured default mode. Only affects new tasks.',
   enablePickerToSetDefault: 'Turn on Agent mode selection to choose a default',
-  enablePickerToCreate: 'Turn on Agent mode selection to start Creator mode',
+  enablePickerToCreate: 'Turn on Agent mode selection to start Xinge Full Power',
 }
 
 /** Simplified Chinese copy. */
@@ -98,7 +98,7 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   seatHint: '即将开始的这个会话所用的 Agent 预设',
   headerHint: '本会话运行的 Agent 预设，开始时即固定',
   nav: 'Agent 预设',
-  sectionIntro: '预设即一个会话的 Agent 所运行的插件组装 —— 它的工具、提示词与能力。复制一份既有预设改成自己的，或用「创造模式」让 Agent 帮你创建。',
+  sectionIntro: '预设即一个会话的 Agent 所运行的插件组装 —— 它的工具、提示词与能力。复制一份既有预设改成自己的，或用「鑫哥全能模式」让 Agent 帮你创建。',
   builtIn: '内置',
   setDefault: '设为默认',
   view: '查看',
@@ -108,8 +108,8 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   presetPtcDescription: '功能完整的编码 Agent，但默认不提供 workflow 工具；其他工具通过 PTC 模式 SDK 呈现，让模型用一个 TypeScript 程序组合多步操作。',
   presetMinimalName: '极简模式',
   presetMinimalDescription: '仅提供持久 shell 的单工具编码 Agent。',
-  presetCordisName: '创造模式',
-  presetCordisDescription: '用于创建自定义 Agent preset：具备标准模式的全部能力，并提供运行时检查、插件实验和 preset 创作指导。',
+  presetCordisName: '鑫哥全能模式',
+  presetCordisDescription: '默认开启文件、联网、持久终端、Skills、计划、工作流、子任务与运行时扩展能力。',
   duplicate: '复制',
   duplicateUnavailable: '此部署未配置可写的预设目录',
   delete: '删除',
@@ -134,7 +134,7 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   copyIntro: '整个预设会在本机复制一份。标识符将成为目录名，事后无法更改；其余内容之后直接在预设自己的文件里编辑。',
   create: '创建',
   creating: '正在创建…',
-  creatorDraft: '用「创造模式」创作自定义预设',
+  creatorDraft: '用「鑫哥全能模式」创作自定义预设',
   openLocation: '打开目录',
   showLocation: '查看路径',
   revealedPathLabel: '预设文件：',
@@ -147,9 +147,9 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   deleting: '正在删除…',
   showPicker: '允许切换agent模式',
   showPickerBeta: 'beta',
-  showPickerDescription: '开启后，新任务可选择标准、PTC、创造、极简及自定义模式；关闭后统一使用默认模式（默认为标准模式，可自定义）。仅影响新任务。',
+  showPickerDescription: '开启后，新任务可选择标准、PTC、鑫哥全能、极简及自定义模式；关闭后统一使用已配置的默认模式。仅影响新任务。',
   enablePickerToSetDefault: '请先开启 Agent 模式选择，再设置默认模式',
-  enablePickerToCreate: '请先开启 Agent 模式选择，再启动创造模式',
+  enablePickerToCreate: '请先开启 Agent 模式选择，再启动鑫哥全能模式',
 }
 
 // The resolution itself is the shared fold in `dsh-agent-presets/display`,

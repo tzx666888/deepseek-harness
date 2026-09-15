@@ -27,8 +27,16 @@
   config: {}
 
 - insert:
-    - id: directory-picker-native
-      name: '@deepseek-ai/dsh-host-directory-picker-native'
+    # The desktop host can launch local Codex app-server processes; the
+    # browser-only Worker composition deliberately does not carry this row.
+    - id: subagent-codex-builtin
+      name: '@deepseek-ai/dsh-subagent-codex'
 
-    - id: ui-directory-picker-native
-      name: '@deepseek-ai/dsh-client-ui-directory-picker-native'
+    # Keep the desktop workspace chooser inside the app so its complete
+    # surface follows the selected DSH locale instead of Electron/macOS's
+    # native-dialog locale.
+    - id: directory-picker-browse
+      name: '@deepseek-ai/dsh-host-directory-picker-browse'
+
+    - id: ui-directory-picker-browse
+      name: '@deepseek-ai/dsh-client-ui-directory-picker-browse'

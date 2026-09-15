@@ -85,10 +85,11 @@ async function stopTree(child: SubprocessHandle): Promise<void> {
 it('hot-reloads a real client-plugin source edit without refreshing the page', async () => {
   const world = await mkdtemp(join(tmpdir(), 'dsh-web-hmr-world-'))
   const sourcePath = join(REPO_ROOT, 'packages/client/ui-conversation/src/client/locales.ts')
+  const typeOutputPath = join(REPO_ROOT, 'packages/client/ui-conversation/lib/types/client/locales.js')
   const binPath = join(REPO_ROOT, 'apps/cli/lib/bin.js')
   if (!existsSync(binPath)) throw new Error('HMR browser test needs the built dsh bin; run pnpm run build first')
   const clientBuildEnvironment = readClientBuildRecord(REPO_ROOT).environment
-  const originalClientArtifacts = await Promise.all(clientArtifactPaths()
+  const originalClientArtifacts = await Promise.all([...clientArtifactPaths(), typeOutputPath]
     .map(async path => [path, await readFile(path)] as const))
   const originalClientArtifactPaths = new Set(originalClientArtifacts.map(([path]) => path))
   const originalSource = await readFile(sourcePath)

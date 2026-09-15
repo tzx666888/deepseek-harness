@@ -71,6 +71,7 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
+    "@deepseek-ai/dsh-mcp-client": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^",
     "zod": "^4.4.3"
   },

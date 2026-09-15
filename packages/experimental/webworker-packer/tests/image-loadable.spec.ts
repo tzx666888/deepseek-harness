@@ -16,7 +16,8 @@
  * and the active loader are module-level slots. The "starts with nothing loaded"
  * case asserts the instance the spec holds is the one that did the work.
  */
-import { existsSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
@@ -137,6 +138,25 @@ const archive = async (): Promise<Uint8Array> =>
   archiveMemo ??= await inflateImage(packed().image, 'the image this spec packed')
 
 ;(subjectBuilt ? describe : describe.skip)('packed image', () => {
+  it('ignores macOS AppleDouble metadata while scanning config trees', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'dsh-config-tree-'))
+    try {
+      writeFileSync(join(directory, 'subject.yml'), `- id: subject\n  name: '${SUBJECT}'\n`)
+      writeFileSync(join(directory, '._subject.yml'), Buffer.from([0, 5, 22, 7, 0, 2]))
+      const result = packVfsImage({
+        config: '[]\n',
+        profile: 'appledouble-config-check',
+        workspaces,
+        resolveFrom: repoRoot,
+        configTrees: [{ mount: 'config/test', directory, scanRoster: true }],
+        entries: [],
+      })
+      expect(result.roster).toEqual([SUBJECT])
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
   it('materializes the roster with every dependency resolved', () => {
     const result = packed()
     expect(workspaces.has(SUBJECT)).toBe(true)

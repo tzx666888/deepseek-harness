@@ -185,6 +185,10 @@ function treeRosterOf(root: string): string[] {
   const names = new Set<string>()
   const walk = (directory: string): void => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      // macOS writes AppleDouble resource forks beside files on non-APFS
+      // volumes. Their names retain the source extension but their contents
+      // are binary metadata, never Cordis configuration.
+      if (entry.name.startsWith('._')) continue
       const absolute = join(directory, entry.name)
       if (entry.isDirectory()) {
         walk(absolute)

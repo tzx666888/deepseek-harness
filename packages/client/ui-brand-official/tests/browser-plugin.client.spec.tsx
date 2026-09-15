@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render } from '@testing-library/react'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { apply, inject } from '../src/client/index.ts'
-import { OfficialBrandMark, OfficialBrandName } from '../src/client/Brand.tsx'
+import {
+  LocalBrandName, LocalPlanetBrandMark, OfficialBrandMark, OfficialBrandName,
+} from '../src/client/Brand.tsx'
 import { apply as hostApply } from '../src/index.ts'
 
 afterEach(() => {
@@ -22,6 +24,14 @@ const HERO_HOLE = 'conversation.hero.brand.mark'
 async function bench(declare = true) {
   const ctx = new Context()
   await ctx.plugin(SlotRegistry).await()
+  const dictionaries = new Map<string, { zh: Record<string, string>; en: Record<string, string> }>()
+  ctx.provide('locale', {
+    register: (namespace: string, dictionary: { zh: Record<string, string>; en: Record<string, string> }) => {
+      dictionaries.set(namespace, dictionary)
+      return () => { dictionaries.delete(namespace) }
+    },
+    bind: (namespace: string) => (key: string) => dictionaries.get(namespace)?.zh[key] ?? key,
+  } as never)
   const slots = ctx.get('slots') as SlotRegistry
   const declareHoles = () => slots.register({
     name: 'root',
@@ -37,14 +47,16 @@ describe('official browser-brand plugin', () => {
   })
 
   it('declares only the slot service it uses', () => {
-    expect(inject).toEqual(['slots'])
+    expect(inject).toEqual(['slots', 'locale'])
   })
 
-  it('leaves every slot empty outside the official build profile', async () => {
+  it('fills both local-build mark surfaces and replaces the metadata-bearing fallback name', async () => {
     vi.stubEnv('DSH_CLIENT_BUILD_PROFILE', 'local')
     const subject = await bench()
     await subject.ctx.plugin({ inject: [...inject], apply }).await()
-    for (const hole of HOLES) expect(subject.slots.entries(hole)).toHaveLength(0)
+    expect(subject.slots.entries('sidebar.brand.mark')).toHaveLength(1)
+    expect(subject.slots.entries('sidebar.brand.name')).toHaveLength(1)
+    expect(subject.slots.entries(HERO_HOLE)).toHaveLength(1)
   })
 
   it('fills declarations before or after apply and removes every occupant on teardown', async () => {
@@ -87,5 +99,24 @@ describe('official browser-brand plugin', () => {
     expect(mark.container.querySelector('svg')?.getAttribute('width')).toBe('34')
     mark.rerender(<OfficialBrandMark size={24} />)
     expect(mark.container.querySelector('svg')?.getAttribute('width')).toBe('24')
+  })
+
+  it('renders the local planet mark at an enlarged compact size', () => {
+    const mark = render(<LocalPlanetBrandMark size={34} />)
+    const planet = mark.container.querySelector('[data-local-brand-mark="planet"]')
+    expect(planet?.textContent).toBe('🪐')
+    expect(planet?.getAttribute('aria-hidden')).toBe('true')
+    expect((planet as HTMLElement | null)?.style.fontSize).toBe('39px')
+    expect((planet as HTMLElement | null)?.style.height).toBe('34px')
+    expect((planet as HTMLElement | null)?.style.width).toBe('34px')
+    expect((planet as HTMLElement | null)?.style.filter)
+      .toBe('hue-rotate(235deg) saturate(1.65) contrast(1.08) drop-shadow(0 0 3px rgb(139 92 246 / 55%))')
+  })
+
+  it('renders the local name without a build-version badge', () => {
+    const name = render(<LocalBrandName name="鑫哥专属" />)
+    expect(name.container.textContent).toBe('鑫哥专属')
+    expect(name.container.querySelector('[data-local-brand-name="true"]')).not.toBeNull()
+    expect(name.container.querySelector('.buildVersion')).toBeNull()
   })
 })

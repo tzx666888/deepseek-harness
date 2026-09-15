@@ -3,6 +3,7 @@
 import { spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
@@ -60,7 +61,11 @@ async function launchElectron(): Promise<void> {
   const mainPort = debugPort('DSH_DESKTOP_MAIN_INSPECT_PORT', 9229)
   const rendererPort = debugPort('DSH_DESKTOP_RENDERER_DEBUG_PORT', 9222)
   const hostPort = debugPort('DSH_DESKTOP_HOST_INSPECT_PORT', 9230)
-  const home = resolve(process.env.DSH_HOME ?? join(DEVELOPMENT_ROOT, 'home'))
+  // Session persistence atomically commits with filesystem links. The
+  // repository can live on exFAT, SMB, or another mounted volume that does
+  // not support that operation, so keep mutable Harness state on the Mac's
+  // local home filesystem by default. An explicit DSH_HOME still wins.
+  const home = resolve(process.env.DSH_HOME ?? join(homedir(), '.dsh-xinge-desktop-development'))
   const userData = join(DEVELOPMENT_ROOT, 'electron-user-data')
   const environment: NodeJS.ProcessEnv = {
     ...process.env,

@@ -54,7 +54,13 @@ const harness = await vi.hoisted(async () => {
       this.ready.reject(new Error('child stopped'))
       return this.exited.promise
     })
-    constructor(readonly node: string, readonly runtime: string, readonly profile: string) { hosts.push(this) }
+    constructor(
+      readonly node: string,
+      readonly runtime: string,
+      readonly profile: string,
+      readonly inspectPort?: number,
+      readonly environment?: NodeJS.ProcessEnv,
+    ) { hosts.push(this) }
   }
   const app = Object.assign(new EventEmitter(), {
     isPackaged: true,
@@ -64,6 +70,7 @@ const harness = await vi.hoisted(async () => {
     getVersion: () => '1.0.0',
     getAppPath: () => 'desktop-test-app',
     requestSingleInstanceLock: () => true,
+    dock: { setIcon: vi.fn() },
     exit: vi.fn(),
     relaunch: vi.fn(),
     quit: vi.fn(() => {
@@ -155,6 +162,22 @@ afterEach(async () => {
 })
 
 describe('desktop main startup', () => {
+  it('installs the native edit menu so macOS dispatches Command+C and Command+V', async () => {
+    const { Menu } = await import('electron')
+    await import('../src/main.ts')
+    await harness.preparing.promise
+    expect(Menu.buildFromTemplate).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ role: 'editMenu' }),
+    ]))
+  })
+
+  it('enables the desktop-only Codex provider for the host process', async () => {
+    await import('../src/main.ts')
+    harness.prepared.resolve()
+    await harness.hostStarted.promise
+    expect(harness.hosts[0]?.environment?.DSH_ENABLE_CODEX_SUBAGENT).toBe('1')
+  })
+
   it('exits with a diagnostic when both initialization and emergency navigation fail', async () => {
     const exited = Promise.withResolvers<undefined>()
     vi.spyOn(harness.app, 'getLocale').mockImplementationOnce(() => { throw new Error('locale unavailable') })
@@ -285,6 +308,8 @@ describe('desktop main startup', () => {
     await harness.preparing.promise
     expect(harness.windows).toHaveLength(1)
     const window = harness.windows[0]!
+    expect(harness.app.dock.setIcon).toHaveBeenCalledWith(expect.stringMatching(/assets\/xinge-app-icon\.png$/u))
+    expect(window.options).toMatchObject({ icon: expect.stringMatching(/assets\/xinge-app-icon\.png$/u) })
     expect(window.options.show).toBe(true)
     expect(window.urls).toEqual(['dsh-app://shell/startup.html'])
     expect(harness.hosts).toHaveLength(0)

@@ -109,7 +109,7 @@ async function bootWeb(
     // `default` here is the COMPOSITION default — the base layer the settings
     // document overrides. No `roots` entry: the plugin bundles the shipped
     // presets itself and prepends their root.
-    { id: 'agent-presets', config: { default: 'standard', includeUserRoot: false } },
+    { id: 'agent-presets', config: { default: 'cordis', includeUserRoot: false } },
     ...extra,
   ]
   // The surface is patch layers over an empty preset root, so the root sits
@@ -226,7 +226,7 @@ describe('the shipped Web composition', () => {
 
     expect(listed.map(preset => preset.id).sort()).toEqual(['cordis', 'minimal', 'ptc', 'standard'])
     expect(listed.every(preset => preset.trust === 'system')).toBe(true)
-    expect(ctx.agentPresets.defaultId).toBe('standard')
+    expect(ctx.agentPresets.defaultId).toBe('cordis')
   })
 
   it('composes the full agent from `standard`', async () => {
@@ -344,10 +344,12 @@ describe('the shipped Web composition', () => {
       expect(tools).toEqual(expect.arrayContaining([
         'cordis_inspect_list', 'cordis_inspect_query', 'cordis_inspect_self',
         'cordis_define', 'cordis_run', 'cordis_stop', 'cordis_undefine',
+        'str_replace_editor',
+        'terminal_open', 'terminal_send', 'terminal_read',
+        'terminal_signal', 'terminal_close', 'terminal_list',
       ]))
       // And it keeps the standard agent's own tools rather than replacing them.
       expect(tools).toEqual(expect.arrayContaining(['bash', 'read', 'edit', 'skill']))
-      expect(tools).not.toContain('str_replace_editor')
       expect(ctx.commands.find(handle.agent, 'goal')).toBeDefined()
 
       // The preset's own authoring skill registers into ITS layer of the host
@@ -875,7 +877,7 @@ describe('authoring a preset on the shipped composition', () => {
 describe('the default preset as a user setting', () => {
   it('composes an unnamed session from the stored default, not the composed one', async () => {
     expect((await ctx.agentPresets.remoteExportList()).modeSelectionEnabled).toBe(true)
-    expect(ctx.agentPresets.defaultId).toBe('standard')
+    expect(ctx.agentPresets.defaultId).toBe('cordis')
 
     await ctx.settings.update(SETTINGS_NAMESPACE, { default: 'minimal' })
     try {
@@ -899,7 +901,7 @@ describe('the default preset as a user setting', () => {
       await ctx.settings.replace(SETTINGS_NAMESPACE, {})
     }
 
-    expect(ctx.agentPresets.defaultId).toBe('standard')
+    expect(ctx.agentPresets.defaultId).toBe('cordis')
   })
 })
 

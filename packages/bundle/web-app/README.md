@@ -59,7 +59,7 @@ When you launch `dsh --profile web` over SSH, the URL line still prints but the 
 
 ### Per-session agent setup
 
-Each browser session composes its own agent from the shipped presets (the `standard` preset by default), instead of sharing one process-wide tool set. You can change the default preset or add your own presets under `$DSH_HOME/.agent-presets`.
+Each browser session composes its own agent from the shipped presets (the `cordis`-based **Xinge Full Power** preset by default), instead of sharing one process-wide tool set. The default adds persistent terminals, Codex delegation, structured editing, and runtime extension tools to the Standard capabilities. You can change the default preset or add your own presets under `$DSH_HOME/.agent-presets`.
 
 -----
 
