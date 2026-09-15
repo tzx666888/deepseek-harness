@@ -29,10 +29,10 @@ import type {} from '@deepseek-ai/dsh-goal/client'
 // api-remotes import already places it in every client program.
 import type { Translate } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ComposerBarProps } from '../contract/slots.ts'
-import { ComposerContentEditable } from '../input/editor/ComposerContentEditable.tsx'
-import { DecoratorPortals } from '../input/editor/DecoratorPortals.tsx'
-import { registerComposerKeymap } from '../input/editor/keymap.ts'
-import { resolveSubmitMode } from '../input/submission-policy.ts'
+import { ComposerContentEditable } from './editor/ComposerContentEditable.tsx'
+import { DecoratorPortals } from './editor/DecoratorPortals.tsx'
+import { registerComposerKeymap } from './editor/keymap.ts'
+import { resolveSubmitMode } from './submission-policy.ts'
 import { attachmentErrorText, imageSizeText } from '../image-labels.ts'
 import { ContextMeter } from './ContextMeter.tsx'
 import { PermissionSelect } from './PermissionSelect.tsx'
@@ -312,6 +312,16 @@ export const InputBar = memo(function InputBar({
         ))
       },
       intakeFiles: (files) => { gate.current.intakeFiles(files) },
+      readClipboardImage: async () => {
+        const desktop = (globalThis as typeof globalThis & {
+          dshDesktop?: { clipboard?: { readImage(): Promise<Uint8Array | null> } }
+        }).dshDesktop
+        if (desktop?.clipboard === undefined) return null
+        const bytes = await desktop.clipboard.readImage()
+        return bytes === null
+          ? null
+          : new File([Uint8Array.from(bytes).buffer], `Screenshot-${Date.now()}.png`, { type: 'image/png' })
+      },
       pasteText: (text) => {
         if (gate.current.machineBusy || gate.current.locked) return
         keyboard.paste(text)

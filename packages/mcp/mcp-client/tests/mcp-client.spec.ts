@@ -145,10 +145,28 @@ function textAt(content: readonly ContentBlock[], index = 0): string {
 }
 
 const defaultOpts: ToolBridgeOptions = {
+  allowTools: new Set(),
   registrationFailure: 'contain',
   serverName: 'srv',
   toolCallTimeoutMs: 60_000,
 }
+
+describe('tool allowlist', () => {
+  it('registers only explicitly admitted raw MCP tools', async () => {
+    const ctx = await mountRegistry()
+    const client = createMockClient([
+      { name: 'see', inputSchema: { type: 'object' } },
+      { name: 'clipboard', inputSchema: { type: 'object' } },
+    ])
+    const disposers = await syncTools(client as never, ctx, {
+      ...defaultOpts,
+      allowTools: new Set(['see']),
+    }, new Map())
+    expect([...disposers.keys()]).toEqual(['mcp__srv__see'])
+    expect(ctx.tools.get('mcp__srv__see')).toBeDefined()
+    expect(ctx.tools.get('mcp__srv__clipboard')).toBeUndefined()
+  })
+})
 
 // ---- Tests ----
 

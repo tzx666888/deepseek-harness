@@ -46,6 +46,10 @@
     command: !!js process.env.DSH_CONTROL_COMMAND
     args: ['mcp', 'serve']
     toolCallTimeoutMs: 60000
+    # Deliberately excludes Peekaboo's raw clipboard reader and autonomous
+    # agent surface. Paste may write user-provided text, but the model cannot
+    # inspect unrelated clipboard contents.
+    allowTools: [permissions, list, see, app, window, click, move, scroll, hotkey, press, type, paste, sleep]
     failOnStartupError: false
 
 # ── shell ───────────────────────────────────────────────────────────────────

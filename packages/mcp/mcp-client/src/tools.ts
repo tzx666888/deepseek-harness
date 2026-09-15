@@ -28,6 +28,8 @@ import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 
 /** Resolved options relevant to tool bridging. */
 export interface ToolBridgeOptions {
+  /** Raw names admitted from discovery; an empty set admits every tool. */
+  allowTools: ReadonlySet<string>
   /** Whether a registry conflict is contained or rejects this synchronization. */
   registrationFailure: 'contain' | 'throw'
   serverName: string
@@ -154,6 +156,7 @@ export async function syncTools(
   do {
     const response = await listToolsUncached(client, cursor)
     for (const tool of response.tools) {
+      if (opts.allowTools.size > 0 && !opts.allowTools.has(tool.name)) continue
       const publicName = publicToolName(opts.serverName, tool.name)
       if (definitions.has(publicName)) {
         throw new Error(

@@ -83,6 +83,7 @@ const stdioConfig: Config = {
   env: {},
   cwd: '',
   toolCallTimeoutMs: 60_000,
+  allowTools: [],
   failOnStartupError: false,
 }
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { findDispatcherViolations, scanRepository, DISPATCHER_OWNER } from './verify-no-bare-dispatcher.ts'
+import {
+  findDispatcherViolations,
+  readRepositorySource,
+  scanRepository,
+  DISPATCHER_OWNER,
+} from './verify-no-bare-dispatcher.ts'
 
 const FILE = 'packages/web/web-fetch-http/src/network.ts'
 
@@ -139,5 +144,9 @@ describe('bare dispatcher check', () => {
 
   it('passes on the current tree', () => {
     expect(scanRepository()).toEqual([])
+  })
+
+  it('ignores a glob result removed before it can be read', () => {
+    expect(readRepositorySource('packages/core/session/src/oxlint-contract-already-removed.ts')).toBeUndefined()
   })
 })

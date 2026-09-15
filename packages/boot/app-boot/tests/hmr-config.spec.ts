@@ -26,8 +26,8 @@ async function bootHmr(dir: string, root: string[] = [], usePolling?: boolean): 
   return ctx
 }
 
-async function eventually(test: () => boolean, message: string): Promise<void> {
-  const deadline = Date.now() + 10_000
+async function eventually(test: () => boolean, message: string, timeoutMs = 10_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs
   while (!test()) {
     if (Date.now() >= deadline) throw new Error(message)
     await new Promise(resolve => setTimeout(resolve, 10))
@@ -117,12 +117,16 @@ describe('HMR exact config paths', () => {
     }
   })
 
-  it('observes creation when the config parent did not exist at registration', { timeout: 20_000 }, async () => {
+  it('observes creation when the config parent did not exist at registration', { timeout: 40_000 }, async () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-hmr-config-'))
     hmrRoots.push(root)
     const dir = join(root, 'later')
     const filename = join(dir, 'plugins.yml')
-    const ctx = await bootHmr(root)
+    // This case owns registration before the parent exists. Polling keeps that
+    // semantic deterministic under the full suite's concurrent watcher load;
+    // the adjacent case still owns native add/change/unlink delivery.
+    const ctx = await bootHmr(root, [], true)
+    expect(ctx.hmr.config.usePolling).toBe(true)
     const observed: string[] = []
     try {
       await ctx.hmr.registerConfig(filename, () => {
@@ -130,7 +134,11 @@ describe('HMR exact config paths', () => {
       })
       mkdirSync(dir)
       writeFileSync(filename, 'created')
-      await eventually(() => observed.includes('created'), 'HMR did not observe config creation under a new parent')
+      await eventually(
+        () => observed.includes('created'),
+        'HMR did not observe config creation under a new parent',
+        20_000,
+      )
     } finally {
       await ctx.fiber.dispose()
     }

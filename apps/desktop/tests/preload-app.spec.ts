@@ -9,10 +9,22 @@ vi.mock('electron', () => electron)
 
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); vi.resetModules() })
 
-it.each(['dsh-app://app/index.html', 'https://shell/startup.html'])('exposes only the carrier marker to %s', async (url) => {
+it('exposes only the carrier marker to an unowned document', async () => {
+  const url = 'https://shell/startup.html'
   vi.stubGlobal('location', new URL(url))
   await import('../src/preload-app.ts')
   expect(electron.contextBridge.exposeInMainWorld).toHaveBeenCalledWith('dshDesktop', { protocolVersion: 1 })
+})
+
+it('exposes the image-only clipboard fallback to the application document', async () => {
+  vi.stubGlobal('location', new URL('dsh-app://app/index.html'))
+  await import('../src/preload-app.ts')
+  const api = electron.contextBridge.exposeInMainWorld.mock.calls[0]?.[1] as {
+    protocolVersion: number
+    clipboard: { readImage(): Promise<Uint8Array | null> }
+  }
+  await api.clipboard.readImage()
+  expect(electron.ipcRenderer.invoke).toHaveBeenCalledWith(DESKTOP_IPC.clipboardReadImage)
 })
 
 it('provides startup controls and a removable state subscription to shell documents', async () => {

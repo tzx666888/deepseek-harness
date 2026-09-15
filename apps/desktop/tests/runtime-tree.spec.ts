@@ -17,6 +17,7 @@ afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: 
 
 it('verifies a runtime after relocation without depending on build paths', async () => {
   const root = fixture()
+  writeFileSync(join(root, 'dsh', '._package.json'), 'macOS metadata')
   const before = await verifyDesktopRuntime(join(root, 'dsh'), '1.0.0')
   cpSync(join(root, 'dsh'), join(root, 'moved'), { recursive: true })
   expect(desktopRuntimeId(await verifyDesktopRuntime(join(root, 'moved'), '1.0.0'))).toBe(desktopRuntimeId(before))

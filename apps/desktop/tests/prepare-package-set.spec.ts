@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   assertDesktopHostPackageFiles,
+  isPackedTarball,
   selectDesktopPackageClosure,
   type PackedDesktopPackage,
 } from '../scripts/prepare-package-set.ts'
@@ -19,6 +20,12 @@ describe('desktop package-set selection', () => {
     vi.stubEnv('DSH_DESKTOP_TARGET_ARCH', 'x64')
     vi.resetModules()
     await expect(import('../scripts/prepare-package-set.ts')).resolves.toHaveProperty('prepareDesktopPackageSet')
+  })
+
+  it('ignores macOS AppleDouble metadata beside packed tarballs', () => {
+    expect(isPackedTarball('deepseek-ai-dsh-0.100.1.tgz')).toBe(true)
+    expect(isPackedTarball('._deepseek-ai-dsh-0.100.1.tgz')).toBe(false)
+    expect(isPackedTarball('.DS_Store')).toBe(false)
   })
 
   it('includes only the available internal production closure', () => {

@@ -61,7 +61,9 @@ pnpm run start:desktop
 
 Workspace development runs the current CLI and private Desktop Host packages under the invoking Node.js and disables desktop package mutations. Its explicitly linked disposable profile is the only mode allowed to resolve bundles outside its own directory. Use an unpacked application to exercise the bundled Node.js, bundled pnpm, bundled dsh resources, plugin installation and repair paths.
 
-On macOS, Xinge Full Power discovers an installed Peekaboo executable at the standard Homebrew locations and exposes its accessibility, screenshot, keyboard, pointer, application, and window operations to that session through MCP. `DSH_CONTROL_COMMAND` can select another absolute executable path. The connection is omitted when no executable is available; macOS Screen Recording and Accessibility permissions remain authoritative for each operation.
+On macOS, Xinge Full Power discovers an installed Peekaboo executable at the standard Homebrew locations and exposes an allowlisted set of accessibility, screenshot, keyboard, pointer, application, and window operations to that session through MCP. `DSH_CONTROL_COMMAND` can select another absolute executable path. The connection is omitted when no executable is available. Screen Recording and Accessibility must both be granted before an operation; raw clipboard reading and Peekaboo's autonomous agent surface are never registered.
+
+The application preload exposes an image-only clipboard fallback for macOS screenshots that Chromium omits from the paste event. It is available only to the owned `dsh-app://app` document, returns no text or arbitrary clipboard formats, and feeds the same validated attachment pipeline as ordinary pasted files.
 
 ## Package
 

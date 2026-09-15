@@ -258,6 +258,14 @@ describe('gate graph validation', () => {
     },
   )
 
+  it('keeps check-all TypeScript builds behind temporary lint probes', () => {
+    const subject = withPnpmEntrypoint(() => gatesForMode('check-all'))
+    const byId = new Map(subject.map(gate => [gate.id, gate]))
+
+    expect(byId.get('build')?.needs).toContain('test')
+    expect(byId.get('build:web')?.needs).toContain('test')
+  })
+
   it.each(['ci-primary', 'ci-static', 'check-all'] as const)(
     'keeps the client dependency policy in %s',
     (mode) => {

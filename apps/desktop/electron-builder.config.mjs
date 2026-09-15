@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   resolveDesktopAppId,
+  resolveLocalMacOSBuild,
   resolveMacOSNotarizationEnvironment,
   resolveMacOSSigningEnvironment,
 } from './scripts/desktop-release-environment.mjs'
@@ -36,9 +37,10 @@ export function createElectronBuilderConfig(
   const unsigned = env.DSH_DESKTOP_UNSIGNED === '1'
   if (unsigned && resolvedPlatform !== 'win32') throw new Error('desktop package: unsigned builds require Windows')
   const packagesMacOS = targetPlatform === 'darwin' || (targetPlatform === undefined && hostPlatform === 'darwin')
+  const localMac = packagesMacOS && resolveLocalMacOSBuild(env)
   const packagesWindows = targetPlatform === 'win32'
-  const macOSSigning = packagesMacOS ? resolveMacOSSigningEnvironment(env) : undefined
-  if (packagesMacOS) resolveMacOSNotarizationEnvironment(env)
+  const macOSSigning = packagesMacOS && !localMac ? resolveMacOSSigningEnvironment(env) : undefined
+  if (packagesMacOS && !localMac) resolveMacOSNotarizationEnvironment(env)
   const windowsSigner = packagesWindows && !unsigned
     ? createWindowsTokenSigner({
         certificateFile: env.DSH_DESKTOP_WINDOWS_CER_FILE,
@@ -50,11 +52,12 @@ export function createElectronBuilderConfig(
   if (windowsSigner !== undefined) {
     installWindowsNsisBootstrapSigner({ sign: windowsSigner })
   }
-  const update = unsigned ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
+  const update = unsigned || localMac ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
   const buildPaths = desktopTargetBuildPaths(resolveDesktopBuildTarget(env, hostPlatform, hostArch))
+  const resourceFilter = ['**/*', '!**/._*', '!**/.DS_Store']
   return {
     appId,
-    productName: 'DeepSeek Harness',
+    productName: '鑫哥专属',
     artifactName: 'deepseek-harness-${version}-${os}-${arch}.${ext}',
     directories: { output: unsigned ? join(buildPaths.root, 'unsigned-artifacts') : buildPaths.artifacts },
     asar: true,
@@ -64,26 +67,28 @@ export function createElectronBuilderConfig(
       'renderer/**/*',
       'assets/**/*',
       'package.json',
+      '!**/._*',
+      '!**/.DS_Store',
     ],
     extraResources: [
-      { from: buildPaths.runtime, to: 'runtime' },
-      { from: buildPaths.dsh, to: 'dsh' },
+      { from: buildPaths.runtime, to: 'runtime', filter: resourceFilter },
+      { from: buildPaths.dsh, to: 'dsh', filter: resourceFilter },
       // electron-builder excludes a source directory's root node_modules.
-      { from: join(buildPaths.dsh, 'node_modules'), to: 'dsh/node_modules' },
+      { from: join(buildPaths.dsh, 'node_modules'), to: 'dsh/node_modules', filter: resourceFilter },
     ],
     mac: {
       icon: 'assets/xinge-app-icon.icns',
       category: 'public.app-category.developer-tools',
-      identity: macOSSigning?.signingIdentity,
-      forceCodeSigning: true,
-      hardenedRuntime: true,
+      identity: localMac ? null : macOSSigning?.signingIdentity,
+      forceCodeSigning: !localMac,
+      hardenedRuntime: !localMac,
       // Native runtime files are pre-signed; PAK resources are sealed by their enclosing bundle.
       signIgnore: ['/Contents/Resources/dsh(?:/|$)', '\\.pak$'],
-      notarize: true,
+      notarize: !localMac,
       target: ['dmg', 'zip'],
     },
     dmg: {
-      sign: true,
+      sign: !localMac,
       writeUpdateInfo: false,
     },
     afterPack: async context => {
@@ -96,10 +101,10 @@ export function createElectronBuilderConfig(
       const { verifyDesktopRuntime } = await import('./lib/types/runtime-tree.js')
       await verifyDesktopRuntime(join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`, 'Contents', 'Resources', 'dsh'),
         context.packager.appInfo.version, { platform: 'darwin', arch: resolvedArch })
-      verifyMacOSSignatureAfterSign(context, macOSSigning ?? resolveMacOSSigningEnvironment(env))
+      if (!localMac) verifyMacOSSignatureAfterSign(context, macOSSigning ?? resolveMacOSSigningEnvironment(env))
     },
     artifactBuildCompleted: artifact => {
-      if (!artifact.file.endsWith('.dmg')) return
+      if (localMac || !artifact.file.endsWith('.dmg')) return
       return notarizeMacOSDiskImageArtifact(
         artifact,
         env,

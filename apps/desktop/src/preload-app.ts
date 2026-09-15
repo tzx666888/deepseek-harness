@@ -1,7 +1,7 @@
 /** Startup controls for shell documents; application documents receive only the carrier marker. */
 
 import { contextBridge, ipcRenderer } from 'electron'
-import { DESKTOP_IPC, type DshDesktopStartupApi } from './ipc.ts'
+import { DESKTOP_IPC, type DshDesktopApplicationApi, type DshDesktopStartupApi } from './ipc.ts'
 import type { DesktopBackendState } from './backend-controller.ts'
 
 const startup: DshDesktopStartupApi = {
@@ -20,5 +20,13 @@ const startup: DshDesktopStartupApi = {
   resetConfiguration: () => ipcRenderer.invoke(DESKTOP_IPC.configurationReset) as Promise<void>,
 }
 
+const application: DshDesktopApplicationApi = {
+  protocolVersion: 1,
+  clipboard: {
+    readImage: () => ipcRenderer.invoke(DESKTOP_IPC.clipboardReadImage) as Promise<Uint8Array | null>,
+  },
+}
+
 contextBridge.exposeInMainWorld('dshDesktop', location.protocol === 'dsh-app:' && location.hostname === 'shell'
-  ? startup : { protocolVersion: 1 })
+  ? startup : location.protocol === 'dsh-app:' && location.hostname === 'app'
+    ? application : { protocolVersion: 1 })

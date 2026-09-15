@@ -9,6 +9,9 @@ export const MACOS_SIGNING_IDENTITY_ENV = 'DSH_DESKTOP_MACOS_SIGNING_IDENTITY'
 /** Environment variable that supplies the expected Apple Developer Team ID. */
 export const MACOS_TEAM_ID_ENV = 'DSH_DESKTOP_MACOS_TEAM_ID'
 
+/** Environment variable that explicitly selects an unsigned, local-only macOS build. */
+export const LOCAL_MACOS_BUILD_ENV = 'DSH_DESKTOP_LOCAL_MAC'
+
 const APPLE_API_KEY_ENV = 'APPLE_API_KEY'
 const APPLE_API_KEY_ID_ENV = 'APPLE_API_KEY_ID'
 const APPLE_API_ISSUER_ENV = 'APPLE_API_ISSUER'
@@ -30,6 +33,14 @@ function requireEnvironmentValue(env, name) {
     throw new Error(`desktop release environment: ${name} must be set to a non-empty value`)
   }
   return value
+}
+
+/** Resolve the explicit local-only macOS packaging mode. */
+export function resolveLocalMacOSBuild(env) {
+  const value = env[LOCAL_MACOS_BUILD_ENV]
+  if (value === undefined || value === '0') return false
+  if (value === '1') return true
+  throw new Error(`desktop release environment: ${LOCAL_MACOS_BUILD_ENV} must be 0 or 1`)
 }
 
 /**

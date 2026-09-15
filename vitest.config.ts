@@ -124,6 +124,10 @@ const testIncludes = [
   'scripts/**/*.spec.ts',
 ]
 
+// AppleDouble sidecars appear as `._name.spec.ts` when the repository lives
+// on some external macOS volumes. They are filesystem metadata, not source.
+const metadataFileExcludes = ['**/._*']
+
 // The instrumented coverage gate sets this env; the exempt heavy suites then
 // run beside it uninstrumented (membership contract in scripts/coverage-exempt.ts).
 // A set-but-not-'1' value is a misconfiguration, not a silent no-op.
@@ -161,7 +165,7 @@ export default defineConfig({
     setupFiles: ['./scripts/test-proxy-environment.ts', './scripts/test-invariants.ts'],
     // .tsx: client component specs (jsdom via per-file @vitest-environment pragma).
     include: testIncludes,
-    exclude: platformUnsupportedTests,
+    exclude: [...platformUnsupportedTests, ...metadataFileExcludes],
     // One coverage invocation aggregates both projects. Every suite forks for
     // Node stability; process-bound suites stay separate for inventory control.
     projects: [
@@ -177,6 +181,7 @@ export default defineConfig({
           setupFiles: ['./scripts/test-proxy-environment.ts', './scripts/test-invariants.ts'],
           include: testIncludes,
           exclude: [
+            ...metadataFileExcludes,
             ...platformUnsupportedTests,
             ...processBoundTests,
             ...coverageExemptExcludes,
@@ -192,6 +197,7 @@ export default defineConfig({
           setupFiles: ['./scripts/test-proxy-environment.ts', './scripts/test-invariants.ts'],
           include: processBoundTests,
           exclude: [
+            ...metadataFileExcludes,
             ...platformUnsupportedTests,
             ...coverageExemptExcludes,
           ],

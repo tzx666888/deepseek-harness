@@ -65,13 +65,14 @@ const harness = await vi.hoisted(async () => {
   const app = Object.assign(new EventEmitter(), {
     isPackaged: true,
     name: 'Desktop test',
+    setName: vi.fn((name: string) => { app.name = name }),
     whenReady: () => Promise.resolve(),
     getLocale: () => 'en-US',
     getVersion: () => '1.0.0',
     getAppPath: () => 'desktop-test-app',
     requestSingleInstanceLock: () => true,
     dock: { setIcon: vi.fn() },
-    exit: vi.fn(),
+    exit: vi.fn(() => { quitCompleted.resolve() }),
     relaunch: vi.fn(),
     quit: vi.fn(() => {
       const event = { preventDefault: vi.fn() }
@@ -104,6 +105,7 @@ const harness = await vi.hoisted(async () => {
 vi.mock('electron', () => ({
   app: harness.app,
   BrowserWindow: harness.FakeWindow,
+  clipboard: { read: async () => [] },
   dialog: harness.dialog,
   ipcMain: {
     handle: (channel: string, handler: (event: { senderFrame: { url: string } }) => unknown) => { harness.handlers.set(channel, handler) },

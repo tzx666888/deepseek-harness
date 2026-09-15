@@ -19,6 +19,7 @@ import { smokeDesktopRuntime } from './smoke-runtime.ts'
 import { writeDesktopRuntime, verifyDesktopRuntime } from '../src/runtime-tree.ts'
 import {
   resolveDesktopAppId,
+  resolveLocalMacOSBuild,
   resolveMacOSSigningEnvironment,
 } from './desktop-release-environment.mjs'
 import {
@@ -37,6 +38,12 @@ const PNPM_BUILD_STATE = BUILD_PATHS.dshPnpm
 const PACKAGE_SET_ROOT = BUILD_PATHS.packageSet
 const NODE = join(RUNTIME_ROOT, 'node', process.platform === 'win32' ? 'node.exe' : 'node')
 const PNPM = join(RUNTIME_ROOT, 'pnpm', 'bin', 'pnpm.mjs')
+
+function removeTree(path: string): void {
+  // macOS may create AppleDouble files concurrently on non-APFS volumes while
+  // a recursive cleanup is in progress. Node's bounded retry handles that race.
+  rmSync(path, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
+}
 
 function manifestVersion(path: string, subject: string): string {
   const manifest = JSON.parse(readFileSync(path, 'utf8')) as { version?: unknown }
@@ -101,8 +108,8 @@ function runPnpm(args: readonly string[]): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  rmSync(DSH_OUTPUT_ROOT, { recursive: true, force: true })
-  rmSync(PNPM_BUILD_STATE, { recursive: true, force: true })
+  removeTree(DSH_OUTPUT_ROOT)
+  removeTree(PNPM_BUILD_STATE)
   mkdirSync(STORE_ROOT, { recursive: true })
   try {
     const release = desktopRelease()
@@ -133,7 +140,7 @@ async function main(): Promise<void> {
         throw new Error(`desktop runtime: missing private Host file ${file}`)
       }
     }
-    if (process.platform === 'darwin') {
+    if (process.platform === 'darwin' && !resolveLocalMacOSBuild(process.env)) {
       await signMacOSRuntime(DSH_OUTPUT_ROOT, resolveDesktopAppId(process.env), resolveMacOSSigningEnvironment(process.env))
     }
     writeDesktopRuntime(DSH_OUTPUT_ROOT, release, packageSet.packages.map(entry => entry.name), target)
@@ -148,11 +155,11 @@ async function main(): Promise<void> {
     await smokeDesktopRuntime(DSH_OUTPUT_ROOT, NODE, descriptor)
     await verifyDesktopRuntime(DSH_OUTPUT_ROOT, release.version, target)
   } catch (error) {
-    rmSync(DSH_OUTPUT_ROOT, { recursive: true, force: true })
+    removeTree(DSH_OUTPUT_ROOT)
     throw error
   } finally {
-    rmSync(BUILD_ROOT, { recursive: true, force: true })
-    rmSync(PNPM_BUILD_STATE, { recursive: true, force: true })
+    removeTree(BUILD_ROOT)
+    removeTree(PNPM_BUILD_STATE)
   }
 }
 

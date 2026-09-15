@@ -4,6 +4,7 @@ import { ModuleLoader, type ModuleJob, type ResolveResult } from '@deepseek-ai/c
 import type { Include } from '@deepseek-ai/cordis-plugin-include'
 import { FSWatcher, watch, type ChokidarOptions } from 'chokidar'
 import { dirname, relative, resolve } from 'node:path'
+import { unwatchFile, watchFile, type Stats } from 'node:fs'
 import { realpath, stat } from 'node:fs/promises'
 import { handleError } from './error.ts'
 import type {} from '@deepseek-ai/cordis-plugin-timer'
@@ -59,6 +60,7 @@ interface ConfigRefresh {
 
 interface ConfigRegistration {
   watcher: FSWatcher
+  stopMissingParentFallback?: () => void
 }
 
 async function findWatchRoot(filename: string): Promise<{ filename: string; root: string; depth: number }> {
@@ -146,12 +148,22 @@ class Hmr extends Service {
       ignored: undefined,
       ignoreInitial: false,
     })
-    const registration = { watcher }
+    const registration: ConfigRegistration = { watcher }
     this.configs.set(watchFilename, registration)
     const onChange = (path: string) => {
       const observed = resolve(path)
       if (observed !== filename && observed !== watchFilename) return
       this.refreshConfig(registration, filename, refresh)
+    }
+    if (depth > 0) {
+      const onStatChange = (current: Stats, previous: Stats) => {
+        // watchFile reports an all-zero pair while an absent path remains
+        // absent. Creation, mutation, and removal all change one of these.
+        if (current.nlink === 0 && previous.nlink === 0) return
+        onChange(filename)
+      }
+      watchFile(filename, { persistent: false, interval: 250 }, onStatChange)
+      registration.stopMissingParentFallback = () => { unwatchFile(filename, onStatChange) }
     }
     watcher.on('add', onChange)
     watcher.on('change', onChange)
@@ -176,11 +188,13 @@ class Hmr extends Service {
       await ready.promise
       return this.ctx.effect(() => async () => {
         if (this.configs.get(watchFilename) === registration) this.configs.delete(watchFilename)
+        registration.stopMissingParentFallback?.()
         await watcher.close()
         await this.configRefreshes.get(registration)?.running
       }, 'hmr.registerConfig()')
     } catch (error) {
       this.configs.delete(watchFilename)
+      registration.stopMissingParentFallback?.()
       await watcher.close()
       throw error
     }
@@ -199,7 +213,9 @@ class Hmr extends Service {
   async* [Service.init]() {
     yield async () => {
       await this.watcher?.close()
-      await Promise.allSettled([...this.configs.values()].map(registration => registration.watcher.close()))
+      const registrations = [...this.configs.values()]
+      for (const registration of registrations) registration.stopMissingParentFallback?.()
+      await Promise.allSettled(registrations.map(registration => registration.watcher.close()))
       this.configs.clear()
       await Promise.allSettled([...this.refreshTasks])
     }
@@ -567,6 +583,9 @@ namespace Hmr {
       'data',
     ]),
     debounce: z.natural().role('ms').default(100),
+    // Preserve Chokidar's deterministic polling mode when explicitly selected
+    // (notably by filesystem-watcher acceptance tests under parallel load).
+    usePolling: z.boolean(),
   })
   // [deepseek-harness] vendored modification: removed `.i18n({ 'en-US': enUS, 'zh-CN': zhCN })`
   // and the corresponding `./locales/*.yml` imports, to avoid a runtime YAML import hook

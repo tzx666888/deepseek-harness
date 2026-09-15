@@ -89,10 +89,17 @@ function packedManifest(tarball: string): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 
+/** Return whether a directory entry is a real npm tarball rather than macOS metadata. */
+export function isPackedTarball(file: string): boolean {
+  // Non-APFS volumes can create AppleDouble resource forks beside freshly written
+  // tarballs. Their names still end in `.tgz`, but their contents are not archives.
+  return file.endsWith('.tgz') && !file.startsWith('._')
+}
+
 function packedPackages(inputs: readonly string[]): Map<string, PackedDesktopPackage> {
   const available = new Map<string, PackedDesktopPackage>()
   for (const input of inputs) {
-    const tarballs = readdirSync(input).filter(file => file.endsWith('.tgz')).sort()
+    const tarballs = readdirSync(input).filter(isPackedTarball).sort()
     if (tarballs.length === 0) throw new Error(`desktop package set: ${input} contains no tarballs`)
     for (const file of tarballs) {
       const tarball = join(input, file)

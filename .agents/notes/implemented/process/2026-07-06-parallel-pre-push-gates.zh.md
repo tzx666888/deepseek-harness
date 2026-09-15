@@ -22,6 +22,8 @@ Node 24 消费方任务采用单个包含 10 道门禁的模式，而非由 shel
 
 各门禁的包脚本仍是临时本地运行所用的命令入口。`hygiene` 调用包含相同十三道检查且限制为本地四个 worker 的调度器模式，而 `doc-sync` 的成员列表由调度器管理（[通过门禁调度器运行 doc-sync](../../archived/process/2026-07-21-doc-sync-through-gate-scheduler.md)）。
 
+按需启用的 `check:all` 聚合会在单元测试套件结算后才启动 TypeScript 构建门禁。Oxlint 可执行契约测试会有意创建并删除短生命周期、位于项目目录内的 TypeScript 探针，以验证项目归属；这条窄依赖可防止并发编译器刚发现探针，探针就被测试删除。Vitest 同时排除 macOS AppleDouble `._*` 边车文件，避免位于外接卷上的仓库把文件系统元数据误当成测试模块。
+
 ## 验证
 
 [scripts/run-gates.spec.ts](../../../../scripts/run-gates.spec.ts) 在执行器运行前拒绝无效图，锁定必须通过与只等结算两种顺序，锁定 hygiene、消费方与原生 Windows 清单及其失败语义，通过真实子进程验证信号终止，并证明流式输出会立即显示且不被缓冲。[scripts/publint-all.spec.ts](../../../../scripts/publint-all.spec.ts) 在下游产物消费方运行前拒绝缺失的公开导出。

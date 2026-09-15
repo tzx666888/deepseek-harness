@@ -61,6 +61,9 @@ function runtimeFiles(root: string): { path: string; name: string }[] {
   const files: { path: string; name: string }[] = []
   const visit = (directory: string): void => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      // Ignore macOS AppleDouble metadata that can appear on non-APFS build
+      // volumes. It is neither application code nor part of the signed runtime.
+      if (entry.name.startsWith('._')) continue
       const path = join(directory, entry.name)
       const name = relative(root, path).split(sep).join('/')
       if (name === DESKTOP_RUNTIME_FILE) continue

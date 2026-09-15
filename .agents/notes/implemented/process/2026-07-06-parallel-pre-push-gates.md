@@ -22,6 +22,8 @@ The Node 24 consumer job is one ten-gate mode rather than a shell-owned process 
 
 The per-gate package scripts remain the vocabulary for ad hoc local runs. `hygiene` invokes a scheduler mode containing the same thirteen checks with the local four-worker cap, while `doc-sync` owns its member list in the scheduler ([doc-sync through the gate scheduler](../../archived/process/2026-07-21-doc-sync-through-gate-scheduler.md)).
 
+The opt-in `check:all` aggregate starts its TypeScript build gates only after the unit suite settles. The Oxlint executable-contract tests intentionally create and remove short-lived, project-local TypeScript probes to verify project ownership; this narrow dependency prevents a concurrent compiler from discovering a probe immediately before its removal. Vitest also excludes macOS AppleDouble `._*` sidecars so repositories on external volumes cannot mistake filesystem metadata for test modules.
+
 ## Verification
 
 [scripts/run-gates.spec.ts](../../../../scripts/run-gates.spec.ts) rejects invalid graphs before the executor runs, pins pass-required and settle-only ordering, pins the hygiene, consumer, and native Windows inventories and their failure semantics, exercises signal termination through a real child process, and proves that streamed output is immediate and unbuffered. [scripts/publint-all.spec.ts](../../../../scripts/publint-all.spec.ts) rejects a missing public export before downstream artifact consumers run.

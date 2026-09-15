@@ -1176,13 +1176,16 @@ describe('dsh-tool-subagent background mode', () => {
 
 describe('dsh-tool-subagent continuable background mode', () => {
   const roots: string[] = []
-  afterEach(() => {
+  const contexts: Context[] = []
+  afterEach(async () => {
+    for (const ctx of contexts.splice(0)) await ctx.fiber.dispose()
     for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
   })
 
   /** Boot the real continuable stack without any model-facing follow-up adapter. */
   async function continuableSetup() {
     const ctx = new Context()
+    contexts.push(ctx)
     await mountAgentLoopTestDependencies(ctx)
     const root = mkdtempSync(path.join(tmpdir(), 'dsh-tool-subagent-continuable-'))
     roots.push(root)

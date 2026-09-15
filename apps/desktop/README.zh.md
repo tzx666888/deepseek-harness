@@ -61,7 +61,9 @@ pnpm run start:desktop
 
 Workspace 开发使用调用命令的 Node.js 运行当前 CLI 与私有 Desktop Host 包，并禁用桌面包修改；只有该模式明确链接的一次性 profile 可以从自身目录外解析 bundle。需要验证内置 Node.js、内置 pnpm、内置 dsh 资源、插件安装和修复时，应运行未封装安装器的应用目录。
 
-在 macOS 上，鑫哥全能模式会从 Homebrew 标准路径发现已安装的 Peekaboo，并通过 MCP 向当前会话提供辅助功能读取、截图、键盘、指针、应用和窗口操作。`DSH_CONTROL_COMMAND` 可以指定另一个绝对可执行文件路径。未发现可执行文件时不会建立连接；每次操作仍受 macOS“屏幕录制”和“辅助功能”权限控制。
+在 macOS 上，鑫哥全能模式会从 Homebrew 标准路径发现已安装的 Peekaboo，并通过 MCP 向当前会话提供经过白名单筛选的辅助功能读取、截图、键盘、指针、应用和窗口操作。`DSH_CONTROL_COMMAND` 可以指定另一个绝对可执行文件路径。未发现可执行文件时不会建立连接。每次操作前必须同时获得 macOS“屏幕录制”和“辅助功能”授权；原始剪贴板读取与 Peekaboo 自带的自主 agent 接口永远不会注册。
+
+当 Chromium 的粘贴事件遗漏 macOS 截图时，应用 preload 会提供仅限图片的剪贴板兜底。该能力只对应用自有的 `dsh-app://app` 页面开放，不返回文字或任意剪贴板格式，并把图片送入与普通粘贴文件相同的校验附件流程。
 
 ## 打包
 

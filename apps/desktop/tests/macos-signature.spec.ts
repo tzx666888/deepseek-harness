@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { NotarizeOptions } from '@electron/notarize'
 import {
   resolveDesktopAppId,
+  resolveLocalMacOSBuild,
   resolveMacOSNotarizationEnvironment,
   resolveMacOSSigningEnvironment,
 } from '../scripts/desktop-release-environment.mjs'
@@ -53,10 +54,14 @@ describe('desktop macOS release signature', () => {
     const config = createElectronBuilderConfig(RELEASE_ENVIRONMENT, 'darwin', 'arm64')
     expect(portablePath(config.directories.output)).toContain('/.desktop-build/targets/mac-arm64/artifacts')
     expect(config.extraResources).toHaveLength(3)
+    expect(config.files).toEqual(expect.arrayContaining(['!**/._*', '!**/.DS_Store']))
     expect(config.extraResources[0]?.to).toBe('runtime')
     expect(config.extraResources[1]?.to).toBe('dsh')
     expect(portablePath(config.extraResources[0]?.from ?? '')).toContain('/.desktop-build/targets/mac-arm64/runtime')
     expect(portablePath(config.extraResources[1]?.from ?? '')).toContain('/.desktop-build/targets/mac-arm64/dsh')
+    for (const resource of config.extraResources) {
+      expect(resource.filter).toEqual(['**/*', '!**/._*', '!**/.DS_Store'])
+    }
     expect(config).toMatchObject({
       appId: RELEASE_ENVIRONMENT.DSH_DESKTOP_APP_ID,
       mac: {
@@ -142,6 +147,25 @@ describe('desktop macOS release signature', () => {
       .toThrow(/unsigned builds require Windows/u)
     expect(() => createElectronBuilderConfig({ ...RELEASE_ENVIRONMENT, DSH_DESKTOP_UNSIGNED: 'yes' }))
       .toThrow(/must be 0 or 1/u)
+  })
+
+  it('permits an explicitly local macOS package without release credentials', async () => {
+    const { createElectronBuilderConfig } = await import('../electron-builder.config.mjs')
+    const config = createElectronBuilderConfig({
+      DSH_DESKTOP_APP_ID: 'ai.xinge.deepseek-harness.local',
+      DSH_DESKTOP_TARGET_PLATFORM: 'darwin',
+      DSH_DESKTOP_TARGET_ARCH: 'arm64',
+      DSH_DESKTOP_LOCAL_MAC: '1',
+    }, 'darwin', 'arm64')
+    expect(config).toMatchObject({
+      productName: '鑫哥专属',
+      mac: { identity: null, forceCodeSigning: false, hardenedRuntime: false, notarize: false },
+      dmg: { sign: false },
+      publish: null,
+    })
+    expect(resolveLocalMacOSBuild({ DSH_DESKTOP_LOCAL_MAC: '1' })).toBe(true)
+    expect(resolveLocalMacOSBuild({})).toBe(false)
+    expect(() => resolveLocalMacOSBuild({ DSH_DESKTOP_LOCAL_MAC: 'yes' })).toThrow(/must be 0 or 1/u)
   })
 
   it('accepts the configured authority and team', () => {

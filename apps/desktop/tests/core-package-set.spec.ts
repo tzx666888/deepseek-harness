@@ -59,6 +59,7 @@ afterEach(() => {
 describe('desktop core package set', () => {
   it('pins the direct dsh dependency and every internal package to local tarballs', () => {
     const { root } = packageSetProject()
+    writeFileSync(join(root, DESKTOP_PACKAGES_DIR, '._dsh.tgz'), 'macOS metadata')
     const packageSet = verifyDesktopCorePackageSet(root, '1.2.3')
     expect(desktopDshPackageSpec(packageSet)).toBe('file:./desktop-packages/dsh.tgz')
     expect(desktopCorePackageOverrides(packageSet)).toEqual({

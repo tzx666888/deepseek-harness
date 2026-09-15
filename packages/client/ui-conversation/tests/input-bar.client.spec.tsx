@@ -28,8 +28,8 @@ import type {
   ComposerAttachment, ComposerAttachmentsOwnerProps, DraftFileUploads,
 } from '../src/client/contract/slots.ts'
 import type { DraftAttachmentId } from '../src/client/contract/input.ts'
-import { InputBar } from '../src/client/skeleton/InputBar.tsx'
-import type { InputBarProps } from '../src/client/skeleton/InputBar.tsx'
+import { InputBar } from '../src/client/input/InputBar.tsx'
+import type { InputBarProps } from '../src/client/input/InputBar.tsx'
 import { zh } from '../src/client/locales.ts'
 
 // Every fixture carries the resource hook the resources plugin merges into GlobalStandardProps.
@@ -344,6 +344,24 @@ describe('image draft rail', () => {
       },
     })
     expect(addFiles).toHaveBeenCalledWith([screenshot])
+  })
+
+  it('falls back to the desktop image bridge when Electron omits clipboard files', async () => {
+    const addFiles = vi.fn(() => null)
+    const { textarea } = bench({ addFiles })
+    vi.stubGlobal('dshDesktop', {
+      protocolVersion: 1,
+      clipboard: { readImage: async () => Uint8Array.of(1, 2, 3) },
+    })
+    fireEvent.paste(textarea, {
+      clipboardData: { items: [], files: [], getData: () => '' },
+    })
+    await vi.waitFor(() => {
+      expect(addFiles).toHaveBeenCalledWith([
+        expect.objectContaining({ type: 'image/png', size: 3 }),
+      ])
+    })
+    vi.unstubAllGlobals()
   })
 
   it('de-duplicates one macOS screenshot represented by both clipboard collections', () => {

@@ -7,6 +7,12 @@ export const MACOS_SIGNING_IDENTITY_ENV: 'DSH_DESKTOP_MACOS_SIGNING_IDENTITY'
 /** Environment variable that supplies the expected Apple Developer Team ID. */
 export const MACOS_TEAM_ID_ENV: 'DSH_DESKTOP_MACOS_TEAM_ID'
 
+/** Environment variable that explicitly selects an unsigned, local-only macOS build. */
+export const LOCAL_MACOS_BUILD_ENV: 'DSH_DESKTOP_LOCAL_MAC'
+
+/** Resolve the explicit local-only macOS packaging mode. */
+export function resolveLocalMacOSBuild(env: NodeJS.ProcessEnv): boolean
+
 /** Public identity expected on a macOS release. */
 export interface MacOSSigningEnvironment {
   readonly signingIdentity: string

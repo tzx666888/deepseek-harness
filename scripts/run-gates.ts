@@ -271,8 +271,12 @@ export function gatesForMode(selected: Mode): Gate[] {
         pnpmScript('duplication', 'duplication'),
         snapshotGate(),
         expectedOutputGate(),
-        pnpmScript('build', 'build'),
-        pnpmScript('build:web', 'build:web'),
+        // The Oxlint contract suite creates short-lived project-local probes so
+        // type-aware linting can prove tsconfig ownership. Keep TypeScript
+        // builds behind that suite; otherwise tsc can discover a probe after
+        // it is created and try to read it after the test removes it.
+        pnpmScript('build', 'build', { needs: ['test'] }),
+        pnpmScript('build:web', 'build:web', { needs: ['test'] }),
         ...hygieneLeafGates({ artifactNeeds: ['build'] }),
         ...docSyncLeafGates({
           docTypecheckNeeds: ['build'],

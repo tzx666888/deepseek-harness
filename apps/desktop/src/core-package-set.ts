@@ -137,7 +137,10 @@ export function verifyDesktopCorePackageSet(
   const expectedFiles = packageSet.packages.map(entry => entry.file).sort()
   let actualFiles: string[]
   try {
-    actualFiles = readdirSync(packageDir).sort()
+    // AppleDouble files are filesystem metadata created by macOS on some
+    // non-APFS volumes. They are not package inputs and must not invalidate an
+    // otherwise exact, integrity-checked package set.
+    actualFiles = readdirSync(packageDir).filter(file => !file.startsWith('._')).sort()
   } catch (error) {
     throw new Error(`desktop package set: failed to read ${packageDir}: ${String(error)}`)
   }

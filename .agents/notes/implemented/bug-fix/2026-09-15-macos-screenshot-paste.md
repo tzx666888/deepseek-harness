@@ -10,12 +10,12 @@ The desktop application omitted Electron's native edit menu, so macOS did not re
 
 ## Decision
 
-Install Electron's native `editMenu` role so macOS owns the standard copy, cut, paste, undo, redo, and select-all accelerators. Collect files from both `DataTransfer.items` and `DataTransfer.files`, then de-duplicate entries that refer to the same clipboard file. Keep the existing text fallback unchanged: when no files are present, the editor still inserts clipboard text normally.
+Install Electron's native `editMenu` role so macOS owns the standard copy, cut, paste, undo, redo, and select-all accelerators. Collect files from both `DataTransfer.items` and `DataTransfer.files`, then de-duplicate entries that refer to the same clipboard file. Some Electron releases omit a screenshot from both collections, so the owned application document receives a narrow preload method that reads only image clipboard payloads. The composer invokes that fallback only for an otherwise empty paste event and sends the resulting PNG through the existing attachment pipeline. Text clipboard access is not exposed through this bridge.
 
 ## Alternatives considered
 
-**Read the native Electron clipboard in the renderer.** This would couple the reusable conversation editor to a desktop-only bridge and require additional IPC surface. The native edit command delivers the standard clipboard event, whose `files` collection carries the image, so no privileged bridge is needed.
+**Expose the full native Electron clipboard in the renderer.** Rejected because text and arbitrary formats would widen the renderer's access to unrelated user data. The bridge exposes only image bytes, only to the owned application origin, and the reusable client checks for it as an optional fallback.
 
 ## Consequences
 
-macOS screenshots pasted with Command+V enter the normal attachment pipeline, including preview, validation, upload, and model input handling. Regression tests cover both the native edit-menu requirement and the Electron-shaped event where `items` is empty and `files` contains the screenshot.
+macOS screenshots pasted with Command+V enter the normal attachment pipeline, including preview, validation, upload, and model input handling. Regression tests cover the native edit-menu requirement, the Electron-shaped event where `items` is empty and `files` contains the screenshot, and the application-only image IPC surface.

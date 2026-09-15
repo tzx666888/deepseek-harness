@@ -21,6 +21,7 @@ export const DESKTOP_IPC = {
   updatesCheck: 'dsh-desktop:updates-check',
   updatesInstall: 'dsh-desktop:updates-install',
   updatesState: 'dsh-desktop:updates-state',
+  clipboardReadImage: 'dsh-desktop:clipboard-read-image',
 } as const
 
 /** Desktop release update state rendered by desktop-owned UI. */
@@ -51,6 +52,15 @@ export interface DshDesktopApi {
     check(): Promise<DesktopUpdateState>
     install(): Promise<void>
     subscribe(listener: (state: DesktopUpdateState) => void): () => void
+  }
+}
+
+/** Minimal bridge available to the backend-served application document. */
+export interface DshDesktopApplicationApi {
+  readonly protocolVersion: 1
+  readonly clipboard: {
+    /** PNG bytes for a copied image, or null when the clipboard has no image. */
+    readImage(): Promise<Uint8Array | null>
   }
 }
 

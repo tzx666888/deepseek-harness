@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   ipcMain,
   Menu,
@@ -25,6 +26,7 @@ import { desktopErrorState } from './startup-error.ts'
 import { startupFailureDocument } from './startup-document.ts'
 
 const SCHEME = 'dsh-app'
+const PRODUCT_NAME = '鑫哥专属'
 const DESKTOP_ICON = fileURLToPath(new URL('../assets/xinge-app-icon.png', import.meta.url))
 const DARWIN_DESKTOP_CONTROL_COMMANDS = ['/opt/homebrew/bin/peekaboo', '/usr/local/bin/peekaboo'] as const
 let focusPrimaryWindow = (): void => {}
@@ -159,6 +161,7 @@ async function serveShellAsset(request: Request): Promise<Response> {
 }
 
 async function main(): Promise<void> {
+  app.setName(PRODUCT_NAME)
   if (process.platform === 'darwin' && app.dock !== undefined) app.dock.setIcon(DESKTOP_ICON)
   const resources = runtimeResources()
   const paths = resolveDesktopPaths()
@@ -390,6 +393,17 @@ async function main(): Promise<void> {
     assertDesktopSender(event, ['shell'])
     await updates.install()
   })
+  ipcMain.handle(DESKTOP_IPC.clipboardReadImage, async (event) => {
+    assertDesktopSender(event, ['app'])
+    const items = await clipboard.read()
+    for (const item of items) {
+      const mediaType = item.types.find(type => type.startsWith('image/'))
+      if (mediaType === undefined) continue
+      const value = await item.getType(mediaType)
+      if (value instanceof Blob) return new Uint8Array(await value.arrayBuffer())
+    }
+    return null
+  })
 
   const checkAndPrompt = async (manual: boolean): Promise<void> => {
     const state = await updates.check()
@@ -503,7 +517,7 @@ async function main(): Promise<void> {
     if (shellInstallerOwnsQuit || quitting) return
     event.preventDefault()
     quitting = true
-    void backend.close().catch((error: unknown) => { console.error(error) }).finally(() => { app.quit() })
+    void backend.close().catch((error: unknown) => { console.error(error) }).finally(() => { app.exit(0) })
   })
 
   mainWindow = createMainWindow()

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-13-xinge-full-power-default.md
-2026-09-13-xinge-full-power-default.md: 2f5d8a301742f6dadda602d6c2a1eb9a8751d6a7
-2026-09-13-xinge-full-power-default.zh.md: 8c92ec8d777f5a9e263c49efbc6c2563bd0af94f
+2026-09-13-xinge-full-power-default.md: 1aefa51b196ca5b9fc4b382797ae50d5ef3b0b7b
+2026-09-13-xinge-full-power-default.zh.md: a2fc451af1841da17597b856b14216647adaf3ec

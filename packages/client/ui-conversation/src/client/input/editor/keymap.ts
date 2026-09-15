@@ -38,6 +38,8 @@ export interface ComposerKeymapHandlers {
   intakeFiles(files: readonly File[]): void
   /** Pasted plain text (sanitized insertion through the shell). */
   pasteText(text: string): void
+  /** Desktop-only fallback for macOS screenshots omitted from ClipboardEvent. */
+  readClipboardImage?(): Promise<File | null>
 }
 
 /** Composition state a keydown can trust (see the module doc's Safari note). */
@@ -166,7 +168,14 @@ export function registerComposerKeymap(editor: LexicalEditor, handlers: Composer
       if (files.length > 0) handlers.intakeFiles(files)
       const text = clipboardData.getData('text/plain')
       if (text === '') {
-        if (files.length === 0) return false
+        if (files.length === 0) {
+          if (handlers.readClipboardImage === undefined) return false
+          event.preventDefault()
+          void handlers.readClipboardImage().then((file) => {
+            if (file !== null) handlers.intakeFiles([file])
+          }).catch(() => {})
+          return true
+        }
         event.preventDefault()
         return true
       }

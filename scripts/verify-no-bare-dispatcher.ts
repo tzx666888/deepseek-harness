@@ -192,6 +192,16 @@ export function findDispatcherViolations(file: string, sourceText: string): Disp
   return violations
 }
 
+/** Read a glob result unless a concurrent test has already removed that probe. */
+export function readRepositorySource(file: string): string | undefined {
+  try {
+    return readFileSync(resolve(root, file), 'utf8')
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined
+    throw error
+  }
+}
+
 /**
  * Scan every package and app source file in the repository.
  *
@@ -204,7 +214,10 @@ export function scanRepository(): DispatcherViolation[] {
     ...globSync('apps/*/src/**/*.ts', { cwd: root }),
   ]
   if (files.length === 0) throw new Error('verify-no-bare-dispatcher: scanned an empty corpus; the globs no longer match.')
-  return files.flatMap(file => findDispatcherViolations(file, readFileSync(resolve(root, file), 'utf8')))
+  return files.flatMap((file) => {
+    const source = readRepositorySource(file)
+    return source === undefined ? [] : findDispatcherViolations(file, source)
+  })
 }
 
 function main(): void {
