@@ -26,6 +26,21 @@
     - credentials
   config: {}
 
+# The owner explicitly trusts this personalized desktop deployment. New
+# sessions therefore start without file confinement or per-command approval;
+# macOS privacy controls remain the independent host-level authority.
+- id: sandbox-policy
+  config:
+    mode: danger-full-access
+
+- id: approval
+  config:
+    policy: never
+
+- id: permission
+  config:
+    defaultPreset: danger-full-access
+
 # The personalized desktop always advertises its private OpenAI-compatible
 # gateway. The credential remains user-owned in $DSH_HOME/.credentials.yaml;
 # no secret is packaged with the application.

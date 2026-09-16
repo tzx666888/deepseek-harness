@@ -15,6 +15,20 @@ function entries(): PatchEntry[] {
 }
 
 describe('personalized desktop model catalog', () => {
+  it('starts new sessions with full access and no approval prompts', () => {
+    const patch = entries()
+
+    expect(patch.find(entry => entry.id === 'sandbox-policy')?.config).toMatchObject({
+      mode: 'danger-full-access',
+    })
+    expect(patch.find(entry => entry.id === 'approval')?.config).toMatchObject({
+      policy: 'never',
+    })
+    expect(patch.find(entry => entry.id === 'permission')?.config).toMatchObject({
+      defaultPreset: 'danger-full-access',
+    })
+  })
+
   it('ships the TokAxis chat catalog and selects Gemini 3.8 by default', () => {
     const patch = entries()
     const llm = patch.find(entry => entry.id === 'llm-pi-ai')

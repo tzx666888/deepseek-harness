@@ -23,8 +23,8 @@ describe('desktop package-set selection', () => {
   })
 
   it('ignores macOS AppleDouble metadata beside packed tarballs', () => {
-    expect(isPackedTarball('deepseek-ai-dsh-0.100.1.tgz')).toBe(true)
-    expect(isPackedTarball('._deepseek-ai-dsh-0.100.1.tgz')).toBe(false)
+    expect(isPackedTarball('deepseek-ai-dsh-0.100.2.tgz')).toBe(true)
+    expect(isPackedTarball('._deepseek-ai-dsh-0.100.2.tgz')).toBe(false)
     expect(isPackedTarball('.DS_Store')).toBe(false)
   })
 
