@@ -28,4 +28,6 @@ The application does not bypass or modify macOS privacy controls. The owner stil
 
 ## Consequences
 
+The Bash executor treats a repeated full-access request as redundant only when the resolved session policy already grants full access. Empty approval reasons on that request do not interrupt execution, while the same arguments in a restricted session fail validation. Local signing follows the local Electron build's `hardenedRuntime: false`; forcing hardened runtime with a certificate that has no Apple Team ID prevents Electron libraries from loading.
+
 New Xinge desktop sessions receive full Harness file access without approval cards. Existing sessions keep their recorded permission until the owner switches them through the composer selector or `/permission danger-full-access`. macOS can still deny protected folders independently, and such a denial is reported as a host privacy problem rather than another Harness approval request. Producing an upgrade also requires access to the local signing identity; neither its private key nor the owner's macOS approval is distributable in the repository or release archive.

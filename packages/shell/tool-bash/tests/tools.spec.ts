@@ -639,6 +639,21 @@ describe('sandbox escalation through the generic task producer', () => {
     expect(text(await call(ctx, 'bash', escalate, malformed))).toContain('not strictly wider')
   })
 
+  it('executes redundant full-access requests only when the session already grants full access', async () => {
+    const { ctx, bash } = await setupSandboxed(true)
+    const prompted = vi.fn()
+    ctx.on('approval/request', () => { prompted(); return Promise.resolve<ApprovalOutcome>('rejected') })
+    const args = { ...escalate, sandbox_permissions: 'danger-full-access', justification: '' }
+    const allowed = await call(ctx, 'bash', args, sandboxAgent('danger-full-access'))
+    expect(allowed.isError).toBe(false)
+    expect(bash.modes).toEqual(['danger-full-access'])
+    expect(prompted).not.toHaveBeenCalled()
+    const denied = await call(ctx, 'bash', args, sandboxAgent('workspace-write'))
+    expect(denied.isError).toBe(true)
+    expect(bash.modes).toEqual(['danger-full-access'])
+    expect(prompted).not.toHaveBeenCalled()
+  })
+
   it('fails closed when approval cannot be routed', async () => {
     const withoutService = await setupSandboxed()
     expect(text(await call(withoutService.ctx, 'bash', escalate, sandboxAgent()))).toContain('no approval service')

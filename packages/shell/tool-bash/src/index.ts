@@ -327,9 +327,16 @@ export function apply(ctx: Context, config: Config = {}): void {
       }],
     },
     async execute(args: BashToolArgs, exec) {
-      validateBashArgs(args)
       // Description is display metadata; workdir defaults to the caller's session.
       const standingPolicy = resolveSandboxPolicy(exec)
+      // A repeated full-access request uses the authority already granted by
+      // the session; it is not an escalation and needs no approval reason.
+      if (standingPolicy?.mode === 'danger-full-access' && args.sandbox_permissions === 'danger-full-access') {
+        args = { ...args }
+        delete args.sandbox_permissions
+        delete args.justification
+      }
+      validateBashArgs(args)
       const approvedMode = args.sandbox_permissions !== undefined && args.justification !== undefined
         ? await approveBashEscalation(args.sandbox_permissions, args.justification, exec, standingPolicy)
         : undefined

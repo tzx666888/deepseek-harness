@@ -59,6 +59,8 @@ kind: "package-reference"
 
 ### 沙箱执行与升权
 
+当会话的实际策略已授予 `danger-full-access` 时，在 `sandbox_permissions` 中重复该值会沿用已有授权执行，并忽略多余的理由。这不会扩大受限会话的权限；受限会话仍须经过升权校验与审批。
+
 当已挂载的执行器约束命令（例如 `dsh-bash-sandbox`）时，被阻止的文件操作会报告为 `[sandbox: file access denied under <mode> mode]`——这是策略拒绝，不是命令失败。模型随后可以在同一轮次中用 `sandbox_permissions`（满足需要的最窄更宽模式）与一句 `justification` 重试完全相同的命令一次；该重试引发的审批提示就是用户同意的方式。升权绝不能预先推测：没有真实拒绝依据的请求，或没有严格宽于当前模式的请求，都会直接失败且不执行任何操作；被拒绝的升权对该命令即为最终结果。
 
 ### 可能出什么问题
