@@ -4,7 +4,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { officialClientBuildEnvironment, writeClientBuildRecord } from '../client-build-environment.ts'
+import {
+  officialClientBuildEnvironment,
+  writeClientBuildRecord,
+  xingeClientBuildEnvironment,
+} from '../client-build-environment.ts'
 import { releaseFamily, type ReleaseMember } from './families.ts'
 import { compareVersions, nextVendorVersion, planShared, reachesPayload } from './bump.ts'
 
@@ -162,7 +166,13 @@ describe('release families', () => {
     expect(() => { dsh.verifyBuildArtifacts(missing) }).toThrow(/record.*missing/)
     expect(() => { vendor.verifyBuildArtifacts(missing) }).not.toThrow()
 
+    const xingeEnvironment = xingeClientBuildEnvironment(resolve(import.meta.dirname, '../..'))
+    const xinge = buildFixture(xingeEnvironment)
+    vi.stubEnv('DSH_CLIENT_BUILD_PROFILE', 'xinge')
+    expect(() => { dsh.verifyBuildArtifacts(xinge) }).not.toThrow()
+
     write(join(official, 'packages/client/example/lib/client.js'), 'module.exports = { changed: true }\n')
+    vi.stubEnv('DSH_CLIENT_BUILD_PROFILE', '')
     expect(() => { dsh.verifyBuildArtifacts(official) }).toThrow(/artifacts differ/)
   })
 

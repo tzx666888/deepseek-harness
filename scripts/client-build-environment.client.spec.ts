@@ -16,6 +16,7 @@ import {
   repositoryVersion,
   resolveClientBuildEnvironment,
   writeClientBuildRecord,
+  xingeClientBuildEnvironment,
 } from './client-build-environment.ts'
 import { clientBundle } from '../packages/client/tsdown.client.ts'
 
@@ -116,6 +117,12 @@ describe('client build environment', () => {
       DSH_CLIENT_TITLE: 'DeepSeek Harness',
       DSH_CLIENT_VERSION: '1.2.3',
     })
+    expect(resolveClientBuildEnvironment(parent, 'xinge')).toEqual({
+      DSH_CLIENT_BUILD_PROFILE: 'xinge',
+      DSH_CLIENT_COMMIT_HASH: COMMIT_HASH.slice(0, 7),
+      DSH_CLIENT_TITLE: '鑫哥专属',
+      DSH_CLIENT_VERSION: '1.2.3',
+    })
     expect(() => {
       resolveClientBuildEnvironment({ DSH_BUILD_CLIENT_PROFILE: 'official' })
     }).toThrow(/DSH_CLIENT_COMMIT_HASH/)
@@ -161,6 +168,12 @@ describe('client build environment', () => {
       DSH_CLIENT_BUILD_PROFILE: 'official',
       DSH_CLIENT_COMMIT_HASH: commit,
       DSH_CLIENT_TITLE: 'DeepSeek Harness',
+      DSH_CLIENT_VERSION: '1.2.3-rc.4',
+    })
+    expect(xingeClientBuildEnvironment(fixtureRoot)).toEqual({
+      DSH_CLIENT_BUILD_PROFILE: 'xinge',
+      DSH_CLIENT_COMMIT_HASH: commit,
+      DSH_CLIENT_TITLE: '鑫哥专属',
       DSH_CLIENT_VERSION: '1.2.3-rc.4',
     })
 

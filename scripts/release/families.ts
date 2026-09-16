@@ -14,6 +14,7 @@ import { resolve } from 'node:path'
 import {
   officialClientBuildEnvironment,
   readClientBuildRecord,
+  xingeClientBuildEnvironment,
 } from '../client-build-environment.ts'
 import { PUBLIC_EXPERIMENTAL_PACKAGE_DIRECTORIES } from '../experimental-package-policy.ts'
 import { validateTarballPayload } from '../publication-payload.ts'
@@ -331,7 +332,10 @@ class DshFamily extends ReleaseFamily {
 
   /** Require current artifacts from a complete official client build. */
   override verifyBuildArtifacts(root: string): void {
-    readClientBuildRecord(root, officialClientBuildEnvironment(root))
+    const expected = process.env.DSH_CLIENT_BUILD_PROFILE === 'xinge'
+      ? xingeClientBuildEnvironment(root)
+      : officialClientBuildEnvironment(root)
+    readClientBuildRecord(root, expected)
   }
 
   /**

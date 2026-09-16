@@ -9,6 +9,7 @@ import {
   resolveDesktopAutoUpdateConfig,
 } from './desktop-auto-update-environment.mjs'
 import { desktopTargetBuildPaths } from './desktop-build-paths.mjs'
+import { resolveLocalMacOSBuild } from './desktop-release-environment.mjs'
 import { packageMacOSArtifacts, type DesktopPrepackagedArtifact } from './package-macos.ts'
 
 const APP_ROOT = resolve(import.meta.dirname, '..')
@@ -100,6 +101,11 @@ export function desktopElectronBuilderEnvironment(environment: NodeJS.ProcessEnv
 export function withoutDesktopUploadCredentials(environment: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return Object.fromEntries(Object.entries(environment)
     .filter(([name]) => !DESKTOP_UPLOAD_CREDENTIAL_ENV_NAMES.has(name)))
+}
+
+/** Select the client brand profile baked into a desktop package. */
+export function desktopClientBuildScript(environment: NodeJS.ProcessEnv): 'build:official' | 'build:xinge' {
+  return resolveLocalMacOSBuild(environment) ? 'build:xinge' : 'build:official'
 }
 
 function isTargetName(value: string): value is DesktopPackageTargetName {
@@ -278,6 +284,10 @@ async function main(): Promise<void> {
     rmSync(`${releaseRecordPath}.tmp`, { force: true })
   }
   const buildEnv = withoutWindowsSigningEnvironment(withoutDesktopUploadCredentials(process.env))
+  const clientBuildScript = desktopClientBuildScript(buildEnv)
+  const clientBuildEnv = clientBuildScript === 'build:xinge'
+    ? { ...buildEnv, DSH_CLIENT_BUILD_PROFILE: 'xinge' }
+    : buildEnv
   const targetEnv: NodeJS.ProcessEnv = {
     ...buildEnv,
     DSH_DESKTOP_TARGET_PLATFORM: target.platform,
@@ -287,8 +297,8 @@ async function main(): Promise<void> {
   for (const name of WINDOWS_SIGNING_ENV_NAMES) {
     if (!invocation.unsigned && process.env[name] !== undefined) electronBuilderEnv[name] = process.env[name]
   }
-  await runPnpm(['run', 'build:official'], buildEnv, REPOSITORY_ROOT)
-  await runPnpm(['run', 'release:pack', '--family', 'dsh', '--out', buildPaths.packedDsh], buildEnv, REPOSITORY_ROOT)
+  await runPnpm(['run', clientBuildScript], clientBuildEnv, REPOSITORY_ROOT)
+  await runPnpm(['run', 'release:pack', '--family', 'dsh', '--out', buildPaths.packedDsh], clientBuildEnv, REPOSITORY_ROOT)
   await runPnpm([
     '--dir',
     'apps/desktop-host',

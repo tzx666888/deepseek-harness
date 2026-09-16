@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   desktopElectronBuilderArguments,
   desktopElectronBuilderEnvironment,
+  desktopClientBuildScript,
   parseDesktopPackageInvocation,
   resolveDesktopPackageTarget,
   withoutDesktopUploadCredentials,
@@ -55,6 +56,11 @@ describe('desktop package target', () => {
       'never',
     ])
     expect(desktopElectronBuilderArguments(target, true)).toContain('--dir')
+  })
+
+  it('builds the personalized client for explicit local macOS packages only', () => {
+    expect(desktopClientBuildScript({ DSH_DESKTOP_LOCAL_MAC: '1' })).toBe('build:xinge')
+    expect(desktopClientBuildScript({})).toBe('build:official')
   })
 
   it('accepts unsigned Windows artifacts and rejects other targets or preparation-only use', () => {
