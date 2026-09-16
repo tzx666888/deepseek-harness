@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-16-xinge-desktop-model-catalog.md
+2026-09-16-xinge-desktop-model-catalog.md: 1a069709f4b0daa4abf487968ab6f5802db5a880
+2026-09-16-xinge-desktop-model-catalog.zh.md: 8a620828f0aea88c3267f4df307de467b3a44062

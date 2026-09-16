@@ -26,6 +26,85 @@
     - credentials
   config: {}
 
+# The personalized desktop always advertises its private OpenAI-compatible
+# gateway. The credential remains user-owned in $DSH_HOME/.credentials.yaml;
+# no secret is packaged with the application.
+- id: llm-pi-ai
+  config:
+    providers:
+      tokaxis:
+        displayName: 鑫哥专属中转站
+        apiKeyEnv: XINGE_DS_API_KEY
+        api: openai-completions
+        baseURL: https://ai.tokaxis.com/v1
+        compat:
+          supportsDeveloperRole: false
+          maxTokensField: max_tokens
+        models:
+          - id: gemini-3.8-flash-high
+            name: Gemini 3.8 Flash High
+            input: [text, image]
+          - id: gemini-3-flash
+            name: Gemini 3 Flash
+            input: [text, image]
+          - id: gemini-3-flash-preview
+            name: Gemini 3 Flash Preview
+            input: [text, image]
+          - id: gemini-3-pro-preview
+            name: Gemini 3 Pro Preview
+            input: [text, image]
+          - id: gemini-3.1-pro-preview
+            name: Gemini 3.1 Pro Preview
+            input: [text, image]
+          - id: gemini-3.1-pro-low
+            name: Gemini 3.1 Pro Low
+            input: [text, image]
+          - id: gemini-3.1-flash-lite
+            name: Gemini 3.1 Flash Lite
+            input: [text, image]
+          - id: gemini-3.1-flash-lite-preview
+            name: Gemini 3.1 Flash Lite Preview
+            input: [text, image]
+          - id: gemini-pro-agent
+            name: Gemini Pro Agent
+            input: [text, image]
+          - id: gemini-2.5-pro
+            name: Gemini 2.5 Pro
+            input: [text, image]
+          - id: gemini-2.5-flash
+            name: Gemini 2.5 Flash
+            input: [text, image]
+          - id: gemini-2.5-flash-lite
+            name: Gemini 2.5 Flash Lite
+            input: [text, image]
+          - id: gpt-6-astra
+            name: GPT 6 Astra
+          - id: gpt-5.6-sol
+            name: GPT 5.6 Sol
+          - id: gpt-5.6-terra
+            name: GPT 5.6 Terra
+          - id: gpt-5.6-luna
+            name: GPT 5.6 Luna
+          - id: gpt-5.5
+            name: GPT 5.5
+          - id: gpt-5.4
+            name: GPT 5.4
+          - id: gpt-5.4-mini
+            name: GPT 5.4 Mini
+          - id: gpt-5.3-codex
+            name: GPT 5.3 Codex
+          - id: gpt-5.3-codex-spark
+            name: GPT 5.3 Codex Spark
+          - id: gpt-5.2
+            name: GPT 5.2
+          - id: gpt-oss-120b-medium
+            name: GPT OSS 120B Medium
+
+- id: agent-default-model
+  config:
+    provider: tokaxis
+    model: gemini-3.8-flash-high
+
 - insert:
     # The desktop host can launch local Codex app-server processes; the
     # browser-only Worker composition deliberately does not carry this row.
