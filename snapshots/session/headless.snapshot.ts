@@ -459,6 +459,11 @@ async function seedWorkspace(scenario: HeadlessScenario, cwd: string): Promise<v
 }
 
 const workspaceSetups: Record<string, (cwd: string) => Promise<void>> = {
+  async 'browser-control-skill'(cwd) {
+    const target = join(cwd, '.dsh', 'skills', 'browser-control', 'SKILL.md')
+    await mkdir(dirname(target), { recursive: true })
+    await copyFile(join(repoRoot, 'packages/preset/agent-presets/presets/cordis/skills/browser-control/SKILL.md'), target)
+  },
   async 'editing-cordis-skill'(cwd) {
     const target = join(cwd, '.dsh', 'skills', 'editing-cordis-compositions', 'SKILL.md')
     await mkdir(dirname(target), { recursive: true })

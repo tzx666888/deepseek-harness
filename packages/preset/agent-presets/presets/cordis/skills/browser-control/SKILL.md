@@ -7,6 +7,8 @@ description: Safely control visible macOS applications and browsers through the 
 
 当用户要求打开、点击、输入、滚动、检查或操作浏览器和桌面应用时，使用 `mcp__desktop__*` 工具。
 
+不要用 Bash 临时编写 AppleScript、反复截图或猜坐标替代这组工具。桌面工具不可用时报告具体错误，不搜索用户磁盘、其他软件的配置或凭据来拼接另一条控制链路。
+
 ## 必须先检查权限
 
 每次开始新的桌面操作前，第一步必须调用 `mcp__desktop__permissions`。
@@ -25,6 +27,11 @@ description: Safely control visible macOS applications and browsers through the 
 ## 操作顺序
 
 1. 权限检查。
-2. `see` 获取当前窗口并确认目标。
-3. 使用窗口、应用、点击、滚动、按键、输入或粘贴工具执行最小必要操作。
-4. `see` 验证结果；无法验证就报告失败，不把动作已发出当作成功。
+2. `list` 使用 `item_type: application_windows`、目标 `app` 和 `include_window_details: [ids, bounds]` 获取窗口。多窗口时用返回的 `window_id` 调用 `window` 的 `focus`，不要循环激活应用或猜标签序号。
+3. `see` 使用 `app_target: frontmost` 获取目标窗口的截图、控件列表和 snapshot。确认标题与目标一致；不要默认截图像素坐标等于屏幕点击坐标。
+4. 优先按 `see` 返回的元素 ID 调用 `click`，同时传入对应 `snapshot`。不要把其他窗口或旧截图中的 ID、坐标用于当前页面。选中标签后重新读取页面，再操作表单。
+5. 填写、点击后用 `see` 验证可见结果。一次读取已经含有图片和控件时，不再额外调用 Bash 截图和 read_image。
+
+## 没有进展时
+
+同一个目标连续两次定位或操作失败，先重新读取窗口列表和界面，最多修正重试一次。仍失败就停止操作，报告目标、具体错误和所缺条件，不继续几十轮切窗口、截图或换脚本。权限错误立即停止，不能通过 Bash 绕开。每完成一个可验证步骤向用户简短报告进展；不能把工具返回“动作已发出”当成任务成功。

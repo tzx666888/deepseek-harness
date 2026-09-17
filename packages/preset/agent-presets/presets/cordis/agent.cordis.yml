@@ -44,7 +44,9 @@
     serverName: desktop
     transport: stdio
     command: !!js process.env.DSH_CONTROL_COMMAND
-    args: ['mcp', 'serve']
+    # A discovered bridge may belong to a different, untrusted macOS process
+    # with different TCC grants. Keep discovery and actions in this host.
+    args: ['mcp', 'serve', '--no-remote']
     toolCallTimeoutMs: 60000
     # Deliberately excludes Peekaboo's raw clipboard reader and autonomous
     # agent surface. Paste may write user-provided text, but the model cannot

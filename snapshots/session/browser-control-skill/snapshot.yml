@@ -1,0 +1,12 @@
+version: 1
+scenario: browser-control-skill
+profile: headless
+composition: default
+recording: authored
+header:
+  class: browser-control
+  pin: true
+  systemPromptSource: text-turn
+  toolSchemasSource: text-turn
+workspace:
+  setup: browser-control-skill

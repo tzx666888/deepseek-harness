@@ -65,6 +65,8 @@ Workspace 开发使用调用命令的 Node.js 运行当前 CLI 与私有 Desktop
 
 当 Chromium 的粘贴事件遗漏 macOS 截图时，应用 preload 会提供仅限图片的剪贴板兜底。该能力只对应用自有的 `dsh-app://app` 页面开放，不返回文字或任意剪贴板格式，并把图片送入与普通粘贴文件相同的校验附件流程。
 
+桌面控制使用 `--no-remote`，防止其他 Peekaboo 桥接进程替换本机的 macOS 权限与窗口列表。[浏览器控制技能](../../packages/preset/agent-presets/presets/cordis/skills/browser-control/SKILL.md) 指导模型按窗口 ID 定位、使用绑定快照的元素、验证结果并在定位失败后有限重试；重试规则属于指导性指令。参见[本机进程决策](../../.agents/notes/implemented/feature/2026-09-17-desktop-control-local-host.zh.md)。
+
 ## 打包
 
 正常打包只需执行一条完整命令。该命令会先准备发布资源，再生成宿主平台的安装包与更新元数据。所有目标都要求通过 `DSH_DESKTOP_APP_ID` 提供反向域名形式的应用 ID。macOS 目标还要求通过 `DSH_DESKTOP_MACOS_SIGNING_IDENTITY` 提供 electron-builder 证书限定名，通过 `DSH_DESKTOP_MACOS_TEAM_ID` 提供对应的 10 字符 Apple Team ID，并提供一套完整的 notarytool 凭据方案。App Store Connect API Key 方式使用以下变量：

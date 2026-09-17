@@ -65,6 +65,8 @@ On macOS, Xinge Full Power discovers an installed Peekaboo executable at the sta
 
 The application preload exposes an image-only clipboard fallback for macOS screenshots that Chromium omits from the paste event. It is available only to the owned `dsh-app://app` document, returns no text or arbitrary clipboard formats, and feeds the same validated attachment pipeline as ordinary pasted files.
 
+Desktop control runs with `--no-remote` so another Peekaboo bridge cannot substitute its own macOS permissions or window inventory. The [browser-control skill](../../packages/preset/agent-presets/presets/cordis/skills/browser-control/SKILL.md) directs window-ID selection, snapshot-bound element interaction, result verification and bounded recovery after failed targeting; its retry guidance is advisory. See the [local-host decision](../../.agents/notes/implemented/feature/2026-09-17-desktop-control-local-host.md).
+
 ## Package
 
 The normal packaging path is one complete command. It performs release preparation before creating the host platform's installers and update metadata. Every target requires a reverse-DNS `DSH_DESKTOP_APP_ID`. macOS targets additionally require the electron-builder certificate qualifier in `DSH_DESKTOP_MACOS_SIGNING_IDENTITY`, its 10-character Apple Team ID in `DSH_DESKTOP_MACOS_TEAM_ID`, and one complete notarytool credential strategy. The App Store Connect API-key strategy uses these variables:
