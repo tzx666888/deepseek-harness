@@ -127,6 +127,9 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
     registrationFailure: 'contain',
     serverName: config.serverName,
     toolCallTimeoutMs: config.toolCallTimeoutMs,
+    ...config.transport === 'stdio' && config.restartOnInterruptedCall
+      ? { recoverInterruptedCall: restartInterruptedGeneration }
+      : {},
   }
   // The initial sync uses 'throw' when failOnStartupError is configured, so
   // a registration conflict propagates to the startup-await path. Re-syncs
@@ -149,6 +152,32 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
   let connectedAt: number | undefined
   /** The real error from the first connection attempt, for startup-await diagnostics. */
   let firstAttemptError: unknown
+  /** Shared cleanup barrier for concurrent calls interrupted on one owned server. */
+  let restarting: Promise<void> | undefined
+
+  async function restartInterruptedGeneration(generation: Client): Promise<void> {
+    if (restarting) return restarting
+    if (!isCurrent(generation)) return
+    // oxlint-disable-next-line typescript/no-non-null-assertion -- isCurrent proves this generation still owns its close barrier.
+    const closed = clientClosed!
+    // Remove ownership before close so onclose cannot launch a concurrent replacement.
+    client = undefined
+    clientClosed = undefined
+    restarting = (async () => {
+      try { await generation.close() } catch { /* waitForClose verifies actual transport shutdown */ }
+      if (!await waitForClose(closed)) {
+        throw new Error(`${label}: 旧连接未能退出，已停止重连；请重启应用。`)
+      }
+      if (disposed) return
+      settling = connectGeneration(false)
+      await settling
+      if (needsRecovery()) throw new Error(`${label}: 旧连接已关闭，但新连接启动失败；请重试或重启应用。`)
+    })()
+    try { await restarting } finally { restarting = undefined }
+  }
+
+  /** Read state after awaited connection work, which can also be disposed. */
+  function needsRecovery(): boolean { return !disposed && client === undefined }
 
   /** A generation may act only while it is the current one on a live plugin. */
   const isCurrent = (generation: Client): boolean => !disposed && client === generation
@@ -344,9 +373,13 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
       // Quiesce, don't just request it: the in-flight attempt enqueues its
       // sync before settling, so awaiting both leaves `disposers` final.
       await settling
-      await syncChain
-      for (const dispose of disposers.values()) dispose()
-      disposers = new Map()
+      try {
+        await restarting
+      } finally {
+        await syncChain
+        for (const dispose of disposers.values()) dispose()
+        disposers = new Map()
+      }
     },
   }
 }

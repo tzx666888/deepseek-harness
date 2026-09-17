@@ -9,7 +9,8 @@ import { Context } from '@deepseek-ai/cordis'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
-import type { Config } from '@deepseek-ai/dsh-mcp-client'
+import type { Config, StdioConfig } from '@deepseek-ai/dsh-mcp-client'
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js'
 
 // ---- Mock MCP SDK ----
 
@@ -92,7 +93,7 @@ function captureLogs(ctx: Context): { warns: string[]; errors: string[]; infos: 
   return { warns, errors, infos }
 }
 
-function stdioConfig(reconnect?: Config['reconnect']): Config {
+function stdioConfig(reconnect?: Config['reconnect']): StdioConfig {
   return {
     transport: 'stdio',
     serverName: 'srv',
@@ -169,6 +170,71 @@ describe('reconnect supervisor', () => {
     instances[0]!.onclose?.()
     await sleep(30)
     expect(instances).toHaveLength(2)
+  })
+
+  it('does not restart a newer connection for a late timeout from an old generation', async () => {
+    const config = { ...stdioConfig(), restartOnInterruptedCall: true }
+    const handle = startConnection(ctx, config, resolveReconnectPolicy({ initialDelayMs: 1 }, 'test'))
+    await handle.ready
+    const callGate: PromiseWithResolvers<unknown> = Promise.withResolvers()
+    mockCallTool.mockReturnValueOnce(callGate.promise)
+    const result = ctx.tools.execute({ signal: testToolSignal, callId: nextCallId(), name: 'mcp__srv__remote', arguments: {} })
+    await vi.waitFor(() => { expect(mockCallTool).toHaveBeenCalled() })
+    instances[0]!.onclose?.()
+    await vi.waitFor(() => { expect(instances).toHaveLength(2) })
+    callGate.reject(new McpError(ErrorCode.RequestTimeout, 'timeout'))
+    await result
+    expect(instances).toHaveLength(2)
+    await handle.dispose()
+  })
+
+  it('reports replacement startup failure without replaying an interrupted tool', async () => {
+    const handle = startConnection(ctx, { ...stdioConfig(), restartOnInterruptedCall: true }, resolveReconnectPolicy({ enabled: false }, 'test'))
+    await handle.ready
+    mockConnect.mockRejectedValue(new Error('replacement unavailable'))
+    mockCallTool.mockRejectedValue(new McpError(ErrorCode.RequestTimeout, 'timeout'))
+    const result = await ctx.tools.execute({ signal: testToolSignal, callId: nextCallId(), name: 'mcp__srv__remote', arguments: {} })
+    expect(JSON.stringify(result)).toContain('新连接启动失败')
+    expect(mockCallTool).toHaveBeenCalledTimes(1)
+    await handle.dispose()
+  })
+
+  it('does not replace a server while disposal owns its interrupted close', async () => {
+    const handle = startConnection(ctx, { ...stdioConfig(), restartOnInterruptedCall: true }, resolveReconnectPolicy(undefined, 'test'))
+    await handle.ready
+    const gate: PromiseWithResolvers<void> = Promise.withResolvers()
+    const entered: PromiseWithResolvers<void> = Promise.withResolvers()
+    mockClose.mockImplementation(async function (this: { onclose?: () => void }) {
+      entered.resolve()
+      await gate.promise
+      this.onclose?.()
+    })
+    mockCallTool.mockRejectedValue(new McpError(ErrorCode.RequestTimeout, 'timeout'))
+    const result = ctx.tools.execute({ signal: testToolSignal, callId: nextCallId(), name: 'mcp__srv__remote', arguments: {} })
+    await entered.promise
+    const disposing = handle.dispose()
+    gate.resolve()
+    await Promise.all([result, disposing])
+    expect(instances).toHaveLength(1)
+    expect(ctx.tools.schemas()).toEqual([])
+  })
+
+  it('refuses replacement when the interrupted server never confirms shutdown', async () => {
+    vi.useFakeTimers()
+    try {
+      const handle = startConnection(ctx, { ...stdioConfig(), restartOnInterruptedCall: true }, resolveReconnectPolicy(undefined, 'test'))
+      await handle.ready
+      mockClose.mockResolvedValue(undefined)
+      mockCallTool.mockRejectedValue(new McpError(ErrorCode.RequestTimeout, 'timeout'))
+      const result = ctx.tools.execute({ signal: testToolSignal, callId: nextCallId(), name: 'mcp__srv__remote', arguments: {} })
+      await vi.advanceTimersByTimeAsync(0)
+      const disposing = expect(handle.dispose()).rejects.toThrow('旧连接未能退出')
+      await vi.advanceTimersByTimeAsync(5_000)
+      expect(JSON.stringify(await result)).toContain('旧连接未能退出')
+      expect(instances).toHaveLength(1)
+      await disposing
+      expect(ctx.tools.schemas()).toEqual([])
+    } finally { vi.useRealTimers() }
   })
 
   it('stops at the failure cap, unregisters the tools, and reports final failure', async () => {

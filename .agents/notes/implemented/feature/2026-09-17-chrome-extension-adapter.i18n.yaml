@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-17-chrome-extension-adapter.md
-2026-09-17-chrome-extension-adapter.md: 01d8b0bf959a16253461308ed6520077ce10a959
-2026-09-17-chrome-extension-adapter.zh.md: 78866c1502342dc69f4863afb999cad713099259
+2026-09-17-chrome-extension-adapter.md: 40588f2cac0923ee184216ab968cfe72b97992c6
+2026-09-17-chrome-extension-adapter.zh.md: a9059018a55b9fe0162e39cf56a40309051733a5

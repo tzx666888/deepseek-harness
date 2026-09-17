@@ -64,6 +64,8 @@ export interface StdioConfig {
   env: Record<string, string>
   /** Working directory for the child process. */
   cwd: string
+  /** Replace the owned server after a timed-out or canceled tool call; never replay the call. */
+  restartOnInterruptedCall?: boolean
   /** Per-tool-call timeout in milliseconds. */
   toolCallTimeoutMs: number
   /** Raw MCP tool names exposed to the model; an empty list exposes every tool. */
@@ -122,6 +124,7 @@ export const Config = z.union([
     args: z.array(String).default([]),
     env: z.dict(String).default({}),
     cwd: z.string().default(''),
+    restartOnInterruptedCall: z.boolean().default(false),
     toolCallTimeoutMs: z.number().default(DEFAULT_TOOL_CALL_TIMEOUT_MS),
     allowTools: z.array(String).default([]),
     failOnStartupError: z.boolean().default(false),

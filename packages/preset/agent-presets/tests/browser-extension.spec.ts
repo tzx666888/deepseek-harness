@@ -64,6 +64,7 @@ describe('Chrome extension adapter', () => {
     expect(row.config).toMatchObject({
       serverName: 'browser', transport: 'stdio', toolCallTimeoutMs: 45000,
       failOnStartupError: true,
+      restartOnInterruptedCall: true,
     })
     const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
       dependencies: Record<string, string>

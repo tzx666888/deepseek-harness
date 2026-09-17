@@ -1,0 +1,9 @@
+- name: cordis:interruptedMcp
+  config:
+    transport: stdio
+    serverName: recovery
+    command: !!js process.execPath
+    args: !!js "[new URL('./interrupted-server.ts', baseUrl).pathname]"
+    toolCallTimeoutMs: 200
+    restartOnInterruptedCall: true
+    failOnStartupError: true

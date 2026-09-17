@@ -65,6 +65,7 @@
     command: !!js process.execPath
     args: !!js "[process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@playwright/mcp/package.json')), 'cli.js'), '--extension', '--browser', 'chrome', '--timeout-action', '10000', '--timeout-navigation', '30000']"
     toolCallTimeoutMs: 45000
+    restartOnInterruptedCall: true
     allowTools: [browser_tabs, browser_snapshot, browser_navigate, browser_navigate_back, browser_click, browser_type, browser_fill_form, browser_select_option, browser_press_key, browser_hover, browser_drag, browser_handle_dialog, browser_take_screenshot, browser_wait_for, browser_close]
     failOnStartupError: true
 

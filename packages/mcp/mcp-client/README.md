@@ -59,6 +59,7 @@ Add one entry per server; nothing else is required. After the harness starts, th
 | `command` / `args` / `env` / `cwd` | — | stdio: executable, arguments, extra env merged over scrubbed ambient env, working directory |
 | `url` / `headers` | — | streamable-http: endpoint URL and extra request headers |
 | `toolCallTimeoutMs` | `60,000` | Timeout per `tools/call` invocation |
+| `restartOnInterruptedCall` | `false` | stdio only: replace the owned server after a timed-out or canceled call; never replay that call |
 | `allowTools` | `[]` | Optional allowlist of raw MCP tool names. Empty exposes all tools; use a non-empty list to keep sensitive or irrelevant server tools out of the model catalog. |
 | `failOnStartupError` | `false` | Reject plugin activation when the initial connection or tool synchronization fails |
 | `reconnect.enabled` | `true` | Reconnect automatically after a lost connection |
@@ -87,6 +88,8 @@ When the model calls an MCP tool, the call runs against the remote server with a
 Images are supported when the current model accepts image input and the harness attachment feature is enabled; they then appear in the conversation like other images. Otherwise — and for audio or embedded resources — the model sees a clear diagnostic message instead of nothing.
 
 ### Startup, updates, and reconnection
+
+For local servers that ignore cancellation, enable `restartOnInterruptedCall`. An interrupted call closes the owned process, waits for its exit, and refreshes tools from a replacement before returning. Concurrent interruptions share one replacement. This resets all sessions sharing that server and can discard server-local state; already completed external effects are not undone. Ordinary tool errors do not restart it. Check the target state before retrying a mutating operation. Browser extension users must approve a new connection; a timeout does not prove that consent was denied.
 
 The server's tools appear before the harness starts its first turn. When the server changes its tool list, the model's tool set updates automatically; if the update fails, the previous tool set keeps working.
 

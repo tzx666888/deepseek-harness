@@ -15,7 +15,7 @@
 import { createHash } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
-import { ListToolsResultSchema } from '@modelcontextprotocol/sdk/types.js'
+import { ErrorCode, McpError, ListToolsResultSchema } from '@modelcontextprotocol/sdk/types.js'
 import { z } from 'zod'
 import type { Context } from '@deepseek-ai/cordis'
 import { isImageAdmissionError } from '@deepseek-ai/dsh-attachment'
@@ -34,6 +34,8 @@ export interface ToolBridgeOptions {
   registrationFailure: 'contain' | 'throw'
   serverName: string
   toolCallTimeoutMs: number
+  /** Quiesce an interrupted owned server before publishing replacement tools. */
+  recoverInterruptedCall?: (client: Client) => Promise<void>
 }
 
 /** State for one sync generation: the current set of disposers keyed by public name. */
@@ -80,21 +82,34 @@ function listToolsUncached(client: Client, cursor?: string) {
 }
 
 /** Call without the SDK pre-validating an output schema the bridge may not support. */
-function callToolUncached(
+async function callToolUncached(
   client: Client,
   rawName: string,
   args: Record<string, unknown>,
   exec: ToolExecution,
   opts: ToolBridgeOptions,
 ) {
-  return client.request(
-    { method: 'tools/call', params: { name: rawName, arguments: args } },
-    RawCallToolResultSchema,
-    {
-      signal: exec.signal,
-      timeout: opts.toolCallTimeoutMs,
-    },
-  )
+  exec.signal.throwIfAborted()
+  try {
+    return await client.request(
+      { method: 'tools/call', params: { name: rawName, arguments: args } },
+      RawCallToolResultSchema,
+      {
+        signal: exec.signal,
+        timeout: opts.toolCallTimeoutMs,
+      },
+    )
+  } catch (error) {
+    // oxlint-disable-next-line typescript/no-unsafe-enum-comparison -- MCP exposes wire codes as numbers, including SDK timeout codes.
+    const timedOut = error instanceof McpError && error.code === ErrorCode.RequestTimeout
+    if (opts.recoverInterruptedCall && (exec.signal.aborted || timedOut)) {
+      await opts.recoverInterruptedCall(client)
+      if (!exec.signal.aborted) {
+        throw new Error('工具连接超时，旧连接已清理并重建；原操作没有自动重试。请检查目标状态，再决定是否重试。', { cause: error })
+      }
+    }
+    throw error
+  }
 }
 
 /**
