@@ -148,7 +148,9 @@ export function registerComposerKeymap(editor: LexicalEditor, handlers: Composer
     editor.registerCommand(PASTE_COMMAND, (event) => {
       // Duck-typed: the payload union includes InputEvent, and test engines
       // deliver clipboardData on plain events.
-      const clipboardData = (event as ClipboardEvent).clipboardData ?? null
+      const clipboardData = (event as {
+        clipboardData?: Pick<DataTransfer, 'getData'> & Partial<Pick<DataTransfer, 'items' | 'files'>> | null
+      }).clipboardData ?? null
       if (clipboardData === null) return false
       const itemFiles = Array.from(clipboardData.items ?? [])
         .filter(item => item.kind === 'file')
