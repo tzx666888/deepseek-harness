@@ -31,6 +31,8 @@ kind: "package-reference"
 
 ### preset 给会话带来什么
 
+定制桌面端通过 `DSH_ENABLE_BROWSER_EXTENSION=1` 启用 `cordis` preset 的 Chrome 扩展适配；普通 CLI profile 不启用。固定版本的 Playwright 运行时随本包安装，不在任务启动时下载。授权、工具限制与共享连接约束见[桌面浏览器控制](../../../apps/desktop/README.zh.md#chrome-extension-control)。
+
 从 preset 组装的会话会运行该 preset `agent.cordis.yml` 所列插件：它的工具、提示词段落与 skill。加入同一 preset 的会话共享一份已安装的组装，且各会话的状态彼此隔离。subagent 会加入其父方的组装，因此它看到的工具与提示词段落和创建它的 agent 相同。
 
 可选的 preset 来自三类来源：本包 `presets/` 下随包交付的 preset、已配置的根目录，以及你自己放在 `<dshHome>/.agent-presets` 下的 preset。选择器会展示每个 preset 的显示名与描述；组装无法加载的 preset 会连同原因一起列出而不是被隐藏，因此你能看到该修什么或删什么。

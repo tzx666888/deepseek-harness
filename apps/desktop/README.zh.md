@@ -67,6 +67,11 @@ Workspace 开发使用调用命令的 Node.js 运行当前 CLI 与私有 Desktop
 
 桌面控制使用 `--no-remote`，防止其他 Peekaboo 桥接进程替换本机的 macOS 权限与窗口列表。[浏览器控制技能](../../packages/preset/agent-presets/presets/cordis/skills/browser-control/SKILL.md) 指导模型按窗口 ID 定位、使用绑定快照的元素、验证结果并在定位失败后有限重试；重试规则属于指导性指令。参见[本机进程决策](../../.agents/notes/implemented/feature/2026-09-17-desktop-control-local-host.zh.md)。
 
+<a id="chrome-extension-control"></a>
+## Chrome 扩展控制
+
+鑫哥全能模式通过 `mcp__browser__*` 提供固定版本的 Playwright MCP 扩展适配。应用菜单中的 **Chrome 浏览器扩展…** 打开官方扩展安装页。首次浏览器操作会请求用户授权 Chrome 标签页；授权与连接标签组由扩展管理。这条链路不需要 macOS 辅助功能权限。模型使用结构化网页快照和元素引用完成点击、表单填写；不会注册任意 JavaScript 执行、cookie 提取和文件上传工具。不要同时在多个 DS 会话执行浏览器控制：使用同一 preset 的会话共享连接及其选中的标签页。使用完毕后可在扩展中断开连接。上游扩展自身的界面不由本应用翻译。
+
 ## 打包
 
 正常打包只需执行一条完整命令。该命令会先准备发布资源，再生成宿主平台的安装包与更新元数据。所有目标都要求通过 `DSH_DESKTOP_APP_ID` 提供反向域名形式的应用 ID。macOS 目标还要求通过 `DSH_DESKTOP_MACOS_SIGNING_IDENTITY` 提供 electron-builder 证书限定名，通过 `DSH_DESKTOP_MACOS_TEAM_ID` 提供对应的 10 字符 Apple Team ID，并提供一套完整的 notarytool 凭据方案。App Store Connect API Key 方式使用以下变量：

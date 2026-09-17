@@ -70,6 +70,7 @@
     "@deepseek-ai/cordis": "workspace:^"
   },
   "dependencies": {
+    "@playwright/mcp": "0.0.81",
     "js-yaml": "^4.1.0",
     "@deepseek-ai/dsh-mcp-client": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^",

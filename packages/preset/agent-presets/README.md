@@ -31,6 +31,8 @@ The shipped Web `standard`, `ptc`, and `cordis` presets include [explicit file d
 
 ### What a preset gives a session
 
+The personalized Desktop enables the `cordis` preset's Chrome extension adapter with `DSH_ENABLE_BROWSER_EXTENSION=1`; ordinary CLI profiles omit it. Its pinned Playwright runtime is installed with this package, not downloaded on task startup. See [Desktop browser control](../../../apps/desktop/README.md#chrome-extension-control) for consent, tool limits and shared-connection constraints.
+
 A session composed from a preset runs the plugins that preset's `agent.cordis.yml` names: its tools, prompt sections, and skills. Sessions joined to the same preset share one installed composition, and each session's state stays separate. A child agent (subagent) joins its parent's composition, so it sees the same tools and prompt sections as the agent that spawned it.
 
 The presets you can choose from come from three sources: the presets shipped inside this package under `presets/`, configured roots, and your own presets under `<dshHome>/.agent-presets`. The picker shows each preset's display name and description; a preset whose composition cannot load is listed with the reason rather than hidden, so you can see what to fix or delete.

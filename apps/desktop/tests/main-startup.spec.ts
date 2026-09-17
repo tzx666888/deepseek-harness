@@ -84,6 +84,7 @@ const harness = await vi.hoisted(async () => {
     windows, hosts, handlers, app, FakeWindow, FakeHost,
     dialog: { showErrorBox: vi.fn(), showMessageBox: vi.fn() },
     buildFromTemplate: vi.fn(),
+    openExternal: vi.fn(),
     applyRelease: vi.fn(() => { preparing.resolve(); return prepared.promise }),
     assertProfileRuntime: vi.fn(),
     canRecoverProfile: vi.fn(() => true),
@@ -113,6 +114,7 @@ vi.mock('electron', () => ({
   },
   Menu: { setApplicationMenu: vi.fn(), buildFromTemplate: harness.buildFromTemplate },
   protocol: { registerSchemesAsPrivileged: vi.fn(), handle: vi.fn() },
+  shell: { openExternal: harness.openExternal },
 }))
 vi.mock('../src/paths.ts', () => ({ resolveDesktopPaths: () => ({ profile: 'desktop-test-profile' }) }))
 vi.mock('../src/project-manager.ts', () => ({
@@ -165,6 +167,26 @@ afterEach(async () => {
 })
 
 describe('desktop main startup', () => {
+  it('opens the official extension store only after the menu dialog is accepted', async () => {
+    await import('../src/main.ts')
+    await harness.preparing.promise
+    const menu = harness.buildFromTemplate.mock.calls[0]?.[0] as {
+      submenu?: { label?: string; click?: () => void }[]
+    }[]
+    const item = menu[0]?.submenu?.find(entry => entry.label === 'Chrome Browser Extension…')
+    expect(item?.click).toBeTypeOf('function')
+    harness.dialog.showMessageBox.mockResolvedValueOnce({ response: 1 })
+    item?.click?.()
+    await Promise.resolve()
+    expect(harness.openExternal).not.toHaveBeenCalled()
+    harness.dialog.showMessageBox.mockResolvedValueOnce({ response: 0 })
+    item?.click?.()
+    await Promise.resolve()
+    expect(harness.openExternal).toHaveBeenCalledWith(
+      'https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm',
+    )
+  })
+
   it('installs the native edit menu so macOS dispatches Command+C and Command+V', async () => {
     await import('../src/main.ts')
     await harness.preparing.promise
@@ -178,6 +200,7 @@ describe('desktop main startup', () => {
     harness.prepared.resolve()
     await harness.hostStarted.promise
     expect(harness.hosts[0]?.environment?.DSH_ENABLE_CODEX_SUBAGENT).toBe('1')
+    expect(harness.hosts[0]?.environment?.DSH_ENABLE_BROWSER_EXTENSION).toBe('1')
   })
 
   it('exits with a diagnostic when both initialization and emergency navigation fail', async () => {

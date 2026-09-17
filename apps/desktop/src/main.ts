@@ -12,6 +12,7 @@ import {
   ipcMain,
   Menu,
   protocol,
+  shell,
   type IpcMainInvokeEvent,
 } from 'electron'
 import { resolveDesktopPaths } from './paths.ts'
@@ -93,7 +94,7 @@ function developmentHostInspectPort(enabled: boolean): number | undefined {
 }
 
 function desktopHostEnvironment(): NodeJS.ProcessEnv {
-  const environment = { ...process.env, DSH_ENABLE_CODEX_SUBAGENT: '1' }
+  const environment = { ...process.env, DSH_ENABLE_CODEX_SUBAGENT: '1', DSH_ENABLE_BROWSER_EXTENSION: '1' }
   if (process.platform !== 'darwin' || process.env.DSH_CONTROL_COMMAND) return environment
   const command = DARWIN_DESKTOP_CONTROL_COMMANDS.find(existsSync)
   return command === undefined ? environment : { ...environment, DSH_CONTROL_COMMAND: command }
@@ -470,6 +471,23 @@ async function main(): Promise<void> {
         click: openPluginWindow,
       },
       { label: messages.checkUpdatesMenu, click: () => { void checkAndPrompt(true) } },
+      {
+        label: messages.browserExtensionMenu,
+        click: () => {
+          void dialog.showMessageBox({
+            type: 'info',
+            title: messages.browserExtensionMenu,
+            message: messages.browserExtensionDescription,
+            buttons: [messages.browserExtensionInstall, messages.later],
+            defaultId: 1,
+            cancelId: 1,
+          }).then(async (result) => {
+            if (result.response === 0) {
+              await shell.openExternal('https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm')
+            }
+          }).catch((error: unknown) => { dialog.showErrorBox(messages.browserExtensionMenu, String(error)) })
+        },
+      },
       { type: 'separator' },
       { role: 'quit' },
     ],
